@@ -53,12 +53,14 @@ typedef std::shared_ptr<void> (*pcast) (...);
 long long getType(void * head) {
     return (long long) head;
 }
-
 // Function is a container for a re-assignable function pointer
 
 struct Function {
     // type is used to get the type of an object via the getType global function.
     static const long long type = ACTION;
+
+private:
+    std::unordered_map<std::string, std::shared_ptr<void> > Variables_Table;
 
     // execute is a re-assignable general purpose function pointer. 
     // Takes in an arbitrary # of args and returns a void *
@@ -67,18 +69,34 @@ public:
 
     Function() {
         this->execute = nullptr; //apparently you can't set a variadic funtion pointer to zero.
+        Variables_Table = {};
     }
 
     void operator=(const Function& other) // copy assignment
     {
         this->execute = other.execute;
     }
-    pcast &operator()() {return this->execute;}
-};
 
+    pcast &operator()() {
+        return this->execute;
+    }
+
+    // Add a copy of a single object property to the properties hash table.
+
+    template <class Type> void addVariable(const std::string property_name, const Type &property_value) {
+        Variables_Table[property_name] = std::shared_ptr<void>(new Type(property_value));
+    }
+
+    std::shared_ptr<void> get(const std::string &toGet) {
+        //If the element exists, get it.
+        return Variables_Table.at(toGet);
+
+    }
+};
 //Thing is a container of local variables and actions.
 
 class Thing {
+    friend class Function; //Functions with pointers to thing can access thing.
 public:
     const long long type = THING;
 
@@ -119,7 +137,7 @@ public:
         //If the element exists, get it.
         try {
             return Properties_Table.at(toGet);
-        }        //Else check to see if the my_parent has it
+        }//Else check to see if the my_parent has it
         catch (const std::out_of_range& oor) {
 
             if (this->my_parent != nullptr) {
@@ -142,7 +160,7 @@ public:
         //Calls the corresponding function in the hash table of function objects.
         try {
             return_value = (Functions_Table.at((std::string)function_name)).execute;
-        }        //C++ map throws an exception if function not found.
+        }//C++ map throws an exception if function not found.
         catch (const std::out_of_range& oor) {
             //Check my_parent.
             if (this->my_parent != nullptr)
@@ -202,7 +220,6 @@ int main() {
     cout << "Child inherits segment variable: " << *number_of_segments_in_baby << endl;
 
     static struct New_Function : public Function { //Create a new function closure
-        long long value = 123ll;
 
         static std::shared_ptr<int> execute(int aa, int bb, int dd) {
             cout << "Call return5 function to get: " << return5() << endl;
@@ -215,6 +232,9 @@ int main() {
             cout << "Function type value is: " << this->type << endl;
             cout << "Function parent's type value is: " << Function::type << endl;
             Function::execute = (pcast)this->execute;
+            this->addVariable("var1",1);
+            int var1 = *pint(this->get("var1"));
+            cout << var1 << endl;
         }
 
         static int return5() {
