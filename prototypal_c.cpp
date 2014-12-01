@@ -73,7 +73,7 @@ public:
     {
         this->execute = other.execute;
     }
-
+    pcast &operator()() {return this->execute;}
 };
 
 //Thing is a container of local variables and actions.
@@ -179,7 +179,7 @@ std::shared_ptr<int> add(int aa, int bb) {
 int main() {
     Thing snake; //Create a snake
     Function doMath; //add is the add function
-    doMath.execute = (pcast) add; //Make doMath execute function add
+    doMath() = (pcast) add; //Make doMath execute function add
     snake.addFunction("add", doMath);
     a distance = pint((snake.Do("add"))(5, 6)); //Tell snake to call doMath
     printf("Parent: 5 + 6 = %d \n", *distance); //doMath executes add
