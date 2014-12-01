@@ -72,9 +72,10 @@ public:
         Variables_Table = {};
     }
 
-    void operator=(const Function& other) // copy assignment
+    void operator=(Function& other) // copy assignment
     {
         this->execute = other.execute;
+        this->Variables_Table = other.Variables_Table;
     }
 
     pcast &operator()() {
@@ -86,7 +87,7 @@ public:
     template <class Type> void addVariable(const std::string property_name, const Type &property_value) {
         Variables_Table[property_name] = std::shared_ptr<void>(new Type(property_value));
     }
-
+protected:
     std::shared_ptr<void> get(const std::string &toGet) {
         //If the element exists, get it.
         return Variables_Table.at(toGet);
@@ -248,3 +249,5 @@ int main() {
 
     return 0;
 }
+
+
