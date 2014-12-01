@@ -54,10 +54,13 @@ long long getType(void * head) {
     return (long long) head;
 }
 // Function is a container for a re-assignable function pointer
-
+struct Function;
 struct Function {
     // type is used to get the type of an object via the getType global function.
     static const long long type = ACTION;
+    
+protected:
+    Function * my_parent;
 
 private:
     std::unordered_map<std::string, std::shared_ptr<void> > Variables_Table;
@@ -69,6 +72,7 @@ public:
 
     Function() {
         this->execute = nullptr; //apparently you can't set a variadic funtion pointer to zero.
+        this->my_parent = nullptr;
         Variables_Table = {};
     }
 
@@ -89,9 +93,21 @@ public:
     }
 protected:
     std::shared_ptr<void> get(const std::string &toGet) {
-        //If the element exists, get it.
-        return Variables_Table.at(toGet);
 
+        //If the element exists, get it.
+        try {
+            return this->Variables_Table.at(toGet);
+        }//Else check to see if the my_parent has it
+        catch (const std::out_of_range& oor) {
+
+            if (this->my_parent != nullptr) {
+                return this->my_parent->get(toGet);
+            } else {
+                throw std::out_of_range("Member not found.");
+                std::shared_ptr<void> ERROR_POINTER(nullptr);
+                return ERROR_POINTER;
+            }
+        }
     }
 };
 //Thing is a container of local variables and actions.
@@ -145,7 +161,7 @@ public:
                 return this->my_parent->get(toGet);
             } else {
                 throw std::out_of_range("Member not found.");
-                std::shared_ptr<int> ERROR_POINTER(nullptr);
+                std::shared_ptr<void> ERROR_POINTER(nullptr);
                 return ERROR_POINTER;
             }
         }
