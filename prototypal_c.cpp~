@@ -1,12 +1,9 @@
 /*
 Copyright [2014] [John-Michael Reed]
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
     http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -29,18 +26,11 @@ using namespace std;
 #define THING -9223372036854775808LL
 #define ACTION -9223372036854775807LL
 
-// Functional allows me to bind functions and call them with different numbers of parameters
-#include <functional>
-
 #include <iostream>
 #include <unordered_map>
 
-// cstdarg allows for variadic function pointers
-#include <cstdarg>
-
 // out_of_range exceptions are thrown by unordered_map
 #include <exception>
-#include <bits/unordered_map.h>
 
 #include <memory>
 
@@ -55,10 +45,11 @@ long long getType(void * head) {
 }
 // Function is a container for a re-assignable function pointer
 struct Function;
+
 struct Function {
     // type is used to get the type of an object via the getType global function.
     static const long long type = ACTION;
-    
+
 protected:
     Function * my_parent;
 
@@ -92,6 +83,7 @@ public:
         Variables_Table[property_name] = std::shared_ptr<void>(new Type(property_value));
     }
 protected:
+
     std::shared_ptr<void> get(const std::string &toGet) {
 
         //If the element exists, get it.
@@ -211,7 +203,42 @@ std::shared_ptr<int> add(int aa, int bb) {
     return return_pointer;
 }
 
+struct New_Function_2 : public Function { //Create a new function closure
+
+    static std::shared_ptr<void> do_subtract(std::string *stringy_the_string) {
+        (*stringy_the_string).append("!!!!!");
+        //std::shared_ptr<void> ret(new std::string(*stringy_the_string));
+        //auto ret = std::make_shared<std::string>(*stringy_the_string);
+        //std::shared_ptr<std::string> ret(new <std::string>(*stringy_the_string));
+        std::shared_ptr<void> ret(new string(*stringy_the_string));
+        return ret;
+        //std::make_shared<std::string>(*stringy_the_string);
+    }
+
+    New_Function_2() : Function() {
+        this->execute = (pcast)&(this->do_subtract);
+        this->addVariable("var", 999);
+        int var1 = *pint(this->get("var"));
+        cout << var1 << endl;
+    }
+
+    static int return5() {
+        return 5;
+    }
+} add_exclamation;
+
 int main() {
+    
+    std::string my_string = "I am a string";
+    
+    a new_string1 = pstring(add_exclamation.do_subtract(&my_string));
+    cout << *new_string1 << endl;
+    cout << "test1" << endl;
+    a new_string2 = pstring(add_exclamation.execute(&my_string));
+    cout << "test2" << endl;
+    cout << *new_string2 << endl;
+    
+    
     Thing snake; //Create a snake
     Function doMath; //add is the add function
     doMath() = (pcast) add; //Make doMath execute function add
@@ -238,18 +265,19 @@ int main() {
 
     static struct New_Function : public Function { //Create a new function closure
 
-        static std::shared_ptr<int> execute(int aa, int bb, int dd) {
+        static std::shared_ptr<int> do_subtract(int aa, int bb, int dd) {
             cout << "Call return5 function to get: " << return5() << endl;
             cout << "do subtract" << endl;
-            std::shared_ptr<int> ret(new int(aa - bb - dd));
+            //auto ret = std::make_shared<int>(aa-bb-dd);
+            std::shared_ptr<int> ret(new int(aa-bb-dd));
             return ret;
         }
 
-        New_Function() {
+        New_Function() : Function() {
             cout << "Function type value is: " << this->type << endl;
             cout << "Function parent's type value is: " << Function::type << endl;
-            Function::execute = (pcast)this->execute;
-            this->addVariable("var1",1);
+            this->execute = (pcast)this->do_subtract;
+            this->addVariable("var1", 1);
             int var1 = *pint(this->get("var1"));
             cout << var1 << endl;
         }
@@ -265,5 +293,4 @@ int main() {
 
     return 0;
 }
-
 

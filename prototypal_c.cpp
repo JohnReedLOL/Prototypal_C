@@ -72,89 +72,97 @@ public:
         this->execute = other.execute;
         this->Variables_Table = other.Variables_Table;
     }
+    
+    template <class Type> void addFunc(Type function_pointer) {
+        this->execute = (pcast)function_pointer;
+    }
 
-    pcast &operator()() {
-        return this->execute;
+    //Note: Function do returns shared pointer.
+    template <class Return_Type, class ...A> Return_Type Do(A... Parameters) 
+    {
+        return * (std::static_pointer_cast<Return_Type>)(this->execute(Parameters...));
     }
 
     // Add a copy of a single object property to the properties hash table.
-
-    template <class Type> void addVariable(const std::string property_name, const Type &property_value) {
+    template <class Type> void addVar(const std::string property_name, const Type &property_value) {
+        //auto thing1 = std::shared_ptr<void>(new Type(property_value));
+        //auto thing2 = std::make_shared<void>(property_value); - Can't do this
         Variables_Table[property_name] = std::shared_ptr<void>(new Type(property_value));
+        //Variables_Table[property_name] = std::make_shared<void>(property_value)); - This doesn't work
     }
-protected:
+public:
 
-    std::shared_ptr<void> get(const std::string &toGet) {
+    template <class Return_Type> Return_Type get(const std::string &toGet) {
 
         //If the element exists, get it.
         try {
-            return this->Variables_Table.at(toGet);
+            return * ((std::static_pointer_cast<Return_Type>)(this->Variables_Table.at(toGet)));
         }//Else check to see if the my_parent has it
         catch (const std::out_of_range& oor) {
 
             if (this->my_parent != nullptr) {
-                return this->my_parent->get(toGet);
+                return this->my_parent->get<Return_Type>(toGet);
             } else {
                 throw std::out_of_range("Member not found.");
-                std::shared_ptr<void> ERROR_POINTER(nullptr);
-                return ERROR_POINTER;
+                Return_Type ERROR;
+                return ERROR;
             }
         }
     }
 };
 //Thing is a container of local variables and actions.
 
-class Thing {
+class Object {
     friend class Function; //Functions with pointers to thing can access thing.
 public:
     const long long type = THING;
 
 private:
-    std::unordered_map<std::string, std::shared_ptr<void> > Properties_Table;
+    std::unordered_map<std::string, std::shared_ptr<void> > Variables_Table;
 
 private:
     std::unordered_map<std::string, Function > Functions_Table;
 
 public:
-    Thing * my_parent;
+    Object * my_parent;
 
-    Thing() {
-        Properties_Table = {};
+    Object() {
+        Variables_Table = {};
         Functions_Table = {};
     }
 
-    Thing(Thing &new_parent) {
-        Properties_Table = {};
+    Object(Object &new_parent) {
+        Variables_Table = {};
         Functions_Table = {};
         this->my_parent = &new_parent;
     }
 
     // Add a copy of a single object property to the properties hash table.
 
-    template <class Type> void addProperty(const std::string property_name, const Type &property_value) {
-        Properties_Table[property_name] = std::shared_ptr<void>(new Type(property_value));
+    template <class Type> void addVar(const std::string property_name, const Type &property_value) {
+        Variables_Table[property_name] = std::shared_ptr<void>(new Type(property_value));
     }
 
     // Add a single action to the actions hash table.
 
-    void addFunction(std::string action_name, Function action_value) {
+    void addFunc(std::string action_name, Function action_value) {
         Functions_Table[action_name] = action_value;
     }
 
-    std::shared_ptr<void> get(const std::string &toGet) {
+    template <class Return_Type> Return_Type get(const std::string &toGet) {
 
         //If the element exists, get it.
         try {
-            return Properties_Table.at(toGet);
+            return * ((std::static_pointer_cast<Return_Type>)(this->Variables_Table.at(toGet)));
         }//Else check to see if the my_parent has it
         catch (const std::out_of_range& oor) {
 
             if (this->my_parent != nullptr) {
-                return this->my_parent->get(toGet);
+                return this->my_parent->get<Return_Type>(toGet);
             } else {
                 throw std::out_of_range("Member not found.");
-                std::shared_ptr<void> ERROR_POINTER(nullptr);
-                return ERROR_POINTER;
+                Return_Type ERROR;
+                return ERROR;
             }
         }
     }
@@ -162,24 +170,29 @@ public:
     // Provides the pointer to call a function
     // Function_name is the name as a std::string. 
 
-    template<class Type> pcast Do(const Type function_name) {
+    //template <class Return_Type, class ...A> Return_Type operator()(A... Parameters) 
+    template<class Return_Type, class ...A> Return_Type Do(const std::string function_name, A... Parameters) {
 
-        pcast return_value = nullptr;
+        //pcast return_value = nullptr;
 
         //Calls the corresponding function in the hash table of function objects.
         try {
-            return_value = (Functions_Table.at((std::string)function_name)).execute;
+            // Return_Type = int, Type = const char *, parameters = 1,2 
+            return (Functions_Table.at((std::string) function_name)).Do<Return_Type>(Parameters... );
         }//C++ map throws an exception if function not found.
         catch (const std::out_of_range& oor) {
             //Check my_parent.
+            cout << "Value not found" << endl;
             if (this->my_parent != nullptr)
-                return_value = this->my_parent->Do(function_name);
+                return this->my_parent->Do<Return_Type>(function_name, Parameters...);
                 //Give up.
             else
+            {
                 throw std::out_of_range("Function cound not be found.");
+                Return_Type r;
+                return r;
+            }
         }
-
-        return return_value;
     }
 
     // Assigns a function pointer to an action in the table of actions.
@@ -191,106 +204,33 @@ public:
 
 };
 
-#define a auto
-#define pbool (std::static_pointer_cast<bool>)
-#define pint (std::static_pointer_cast<int>)
-#define pdouble (std::static_pointer_cast<double>)
-#define pstring (std::static_pointer_cast<std::string>)
-#define pThing (std::static_pointer_cast<Thing>)
+//#define a auto
+#define s std::string
 
 std::shared_ptr<int> add(int aa, int bb) {
-    std::shared_ptr<int> return_pointer(new int(aa + bb));
+    //std::shared_ptr<int> return_pointer(new int(aa + bb));
+    auto return_pointer = std::make_shared<int>(aa + bb);
     return return_pointer;
 }
 
-struct New_Function_2 : public Function { //Create a new function closure
-
-    static std::shared_ptr<void> do_subtract(std::string *stringy_the_string) {
-        (*stringy_the_string).append("!!!!!");
-        //std::shared_ptr<void> ret(new std::string(*stringy_the_string));
-        //auto ret = std::make_shared<std::string>(*stringy_the_string);
-        //std::shared_ptr<std::string> ret(new <std::string>(*stringy_the_string));
-        std::shared_ptr<void> ret(new string(*stringy_the_string));
-        return ret;
-        //std::make_shared<std::string>(*stringy_the_string);
-    }
-
-    New_Function_2() : Function() {
-        this->execute = (pcast)&(this->do_subtract);
-        this->addVariable("var", 999);
-        int var1 = *pint(this->get("var"));
-        cout << var1 << endl;
-    }
-
-    static int return5() {
-        return 5;
-    }
-} add_exclamation;
 
 int main() {
+
+    Function adder;
+    adder.addVar("var", 5);
     
-    std::string my_string = "I am a string";
+    cout << adder.get<int>("var") << endl;
     
-    a new_string1 = pstring(add_exclamation.do_subtract(&my_string));
-    cout << *new_string1 << endl;
-    cout << "test1" << endl;
-    a new_string2 = pstring(add_exclamation.execute(&my_string));
-    cout << "test2" << endl;
-    cout << *new_string2 << endl;
+    adder.addFunc(add);
+    int n = adder.Do<int>(3,4);
+    cout << n << endl;
     
+    Object obj;
+    obj.addVar("var", 9);
+    cout << obj.get<int>("var") << endl;
     
-    Thing snake; //Create a snake
-    Function doMath; //add is the add function
-    doMath() = (pcast) add; //Make doMath execute function add
-    snake.addFunction("add", doMath);
-    a distance = pint((snake.Do("add"))(5, 6)); //Tell snake to call doMath
-    printf("Parent: 5 + 6 = %d \n", *distance); //doMath executes add
-
-    Thing baby_snake(snake); //Create a baby whose parent is snake
-    a baby_distance = pint((baby_snake.Do("add"))(1, 2)); //Call parent function
-    printf("Child: 1 + 2 = %d \n", *baby_distance);
-
-    a rr = 444;
-    snake.addProperty("age", rr); //Give snake an age
-    a age_of_snake = pint(snake.get("age")); //retrieve age with a string
-    printf("Age of parent is: %d \n", *age_of_snake); //don't call free on this
-
-    a segments = 32.5;
-    snake.addProperty("seg", segments);
-    a number_of_segments = pdouble(snake.get("seg")); //retrieve segments
-    cout << "Number of segments in snake: " << *number_of_segments << endl;
-
-    a number_of_segments_in_baby = pdouble(baby_snake.get("seg"));
-    cout << "Child inherits segment variable: " << *number_of_segments_in_baby << endl;
-
-    static struct New_Function : public Function { //Create a new function closure
-
-        static std::shared_ptr<int> do_subtract(int aa, int bb, int dd) {
-            cout << "Call return5 function to get: " << return5() << endl;
-            cout << "do subtract" << endl;
-            //auto ret = std::make_shared<int>(aa-bb-dd);
-            std::shared_ptr<int> ret(new int(aa-bb-dd));
-            return ret;
-        }
-
-        New_Function() : Function() {
-            cout << "Function type value is: " << this->type << endl;
-            cout << "Function parent's type value is: " << Function::type << endl;
-            this->execute = (pcast)this->do_subtract;
-            this->addVariable("var1", 1);
-            int var1 = *pint(this->get("var1"));
-            cout << var1 << endl;
-        }
-
-        static int return5() {
-            return 5;
-        }
-    } new_action;
-
-    snake.addFunction("measure", new_action); //"measure" will call execute
-    a subtraction = pint((snake.Do("measure"))(10, 2, 1));
-    printf("10 - 2 - 1 = %d", *subtraction);
-
+    obj.addFunc("add", adder);
+    cout << obj.Do<int>("add",1,2) << endl;
+    
     return 0;
 }
-
