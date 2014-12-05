@@ -18,13 +18,10 @@ limitations under the License.
  * Created on November 29, 2014, 3:35 PM
  */
 
-#include <cstdlib>
-
 using namespace std;
 
 // 64 bit integers used for type identification
-#define THING -9223372036854775808LL
-#define ACTION -9223372036854775807LL
+#define ____OBJECT_TYPE -1111111111111111111LL
 
 #include <iostream>
 #include <unordered_map>
@@ -34,131 +31,103 @@ using namespace std;
 
 #include <memory>
 
-// Function pointer cast. 
-// Produces a function that takes in an arbitrary # of args and returns a shared pointer
-typedef std::shared_ptr<void> (*pcast) (...);
+// Function pointer cast produces a function that takes in an arbitrary # of args and returns a void pointer.
+typedef void * (*pcast) (...);
 
-// type is stored as a 64 bit value at the head of an object
+struct Object;
 
-long long getType(void * head) {
-    return (long long) head;
+/*
+ * Checks to see if a value is an object
+ * @param value - address of value whose type is being checked
+ * @return bool - true if return type is Object
+ */
+template <class T> bool isObject(T * value) {
+    return *((long long *) value) == ____OBJECT_TYPE;
 }
-// Function is a container for a re-assignable function pointer
-struct Function;
 
-struct Function {
-    // type is used to get the type of an object via the getType global function.
-    static const long long type = ACTION;
-
-protected:
-    Function * my_parent;
-
-private:
-    std::unordered_map<std::string, std::shared_ptr<void> > Variables_Table;
-
-    // execute is a re-assignable general purpose function pointer. 
-    // Takes in an arbitrary # of args and returns a void *
-public:
-    pcast execute;
-
-    Function() {
-        this->execute = nullptr; //apparently you can't set a variadic funtion pointer to zero.
-        this->my_parent = nullptr;
-        Variables_Table = {};
-    }
-
-    void operator=(Function& other) // copy assignment
-    {
-        this->execute = other.execute;
-        this->Variables_Table = other.Variables_Table;
-    }
+/*
+ * Dynamic object which is capable of adding static function pointers and values to itself.
+ */
+struct Object {
     
-    template <class Type> void addFunc(Type function_pointer) {
-        this->execute = (pcast)function_pointer;
-    }
+    // type is stored as a 64 bit value at the head of an object
+    const long long my_type = ____OBJECT_TYPE;
 
-    //Note: Function do returns shared pointer.
-    template <class Return_Type, class ...A> Return_Type Do(A... Parameters) 
-    {
-        return * (std::static_pointer_cast<Return_Type>)(this->execute(Parameters...));
-    }
+    // contents table stores persistent variables and other objects
+    std::unordered_map<std::string, void * > my_contents;
 
-    // Add a copy of a single object property to the properties hash table.
-    template <class Type> void addVar(const std::string property_name, const Type &property_value) {
-        //auto thing1 = std::shared_ptr<void>(new Type(property_value));
-        //auto thing2 = std::make_shared<void>(property_value); - Can't do this
-        Variables_Table[property_name] = std::shared_ptr<void>(new Type(property_value));
-        //Variables_Table[property_name] = std::make_shared<void>(property_value)); - This doesn't work
-    }
-public:
-
-    template <class Return_Type> Return_Type get(const std::string &toGet) {
-
-        //If the element exists, get it.
-        try {
-            return * ((std::static_pointer_cast<Return_Type>)(this->Variables_Table.at(toGet)));
-        }//Else check to see if the my_parent has it
-        catch (const std::out_of_range& oor) {
-
-            if (this->my_parent != nullptr) {
-                return this->my_parent->get<Return_Type>(toGet);
-            } else {
-                throw std::out_of_range("Member not found.");
-                Return_Type ERROR;
-                return ERROR;
-            }
-        }
-    }
-};
-//Thing is a container of local variables and actions.
-
-class Object {
-    friend class Function; //Functions with pointers to thing can access thing.
-public:
-    const long long type = THING;
-
-private:
-    std::unordered_map<std::string, std::shared_ptr<void> > Variables_Table;
-
-private:
-    std::unordered_map<std::string, Function > Functions_Table;
-
-public:
+    // re-assignable pointer to parent of this object.
     Object * my_parent;
 
+    // re-assignable function pointer - set with Object::setFunc and called with Object::call<Return_Type>
+    pcast execute_me;
+
+    // Default constructor
     Object() {
-        Variables_Table = {};
-        Functions_Table = {};
+        my_parent = nullptr;
+        my_contents = {};
     }
 
-    Object(Object &new_parent) {
-        Variables_Table = {};
-        Functions_Table = {};
-        this->my_parent = &new_parent;
+    /*
+     * Sets function pointer execute_me to the address of a static function.
+     * @param function_pointer - a generic function pointer
+     */
+    template <class Type> void setFunc (Type function_pointer) {
+        this->execute_me = (pcast) function_pointer;
     }
 
     // Add a copy of a single object property to the properties hash table.
 
-    template <class Type> void addVar(const std::string property_name, const Type &property_value) {
-        Variables_Table[property_name] = std::shared_ptr<void>(new Type(property_value));
+    /*
+     * Add a single object property to the properties hash table with key string::name and generic value
+     * @param name - name that will be used to retrieve value
+     * @param value - a generic value to be added
+     */
+    template <class Type> void set(const std::string name, const Type &value) {
+        Type * toSet = new Type;
+        *toSet = value;
+        my_contents[name] = (void *) (toSet);
     }
 
-    // Add a single action to the actions hash table.
-
-    void addFunc(std::string action_name, Function action_value) {
-        Functions_Table[action_name] = action_value;
-    }
-
-    template <class Return_Type> Return_Type get(const std::string &toGet) {
+    /*
+     * Checks to see if this object has a variable with name value equal to std::string name
+     * Throws out_of_range exception when name cannot be found
+     * @param name - name of the variable that we are searching for
+     * @return true if element of name name can be found in this object or an object somewhere in its parent tree.
+     */
+    bool has(const std::string &name) {
 
         //If the element exists, get it.
         try {
-            return * ((std::static_pointer_cast<Return_Type>)(this->Variables_Table.at(toGet)));
+            ((this->my_contents.at(name)));
+            return true;
         }//Else check to see if the my_parent has it
         catch (const std::out_of_range& oor) {
 
             if (this->my_parent != nullptr) {
-                return this->my_parent->get<Return_Type>(toGet);
+                return this->my_parent->has(name);
+            } else {
+                return false;
+            }
+        }
+    }
+
+    /*
+     * Retrieves an element from this object with non-void return type
+     * Throws out_of_range exception when name cannot be found
+     * @param name - string name of the variable that we are searching for
+     * @return Return_Type - return type which must be specified in angle brackets
+     */
+    template <class Return_Type> Return_Type get(const std::string &name) {
+
+        //If the element exists, get it.
+        try {
+            return * ((Return_Type *) (this->my_contents.at(name)));
+        }//Else check to see if the my_parent has it
+        catch (const std::out_of_range& oor) {
+
+            if (this->my_parent != nullptr) {
+                return this->my_parent->get<Return_Type>(name);
             } else {
                 throw std::out_of_range("Member not found.");
                 Return_Type ERROR;
@@ -167,10 +136,82 @@ public:
         }
     }
 
-    // Provides the pointer to call a function
-    // Function_name is the name as a std::string. 
+    /*
+     * Directly calls the generic function pointer execute_me contained within this object if the return type is void
+     * Throws bad function call if pointer is null
+     * @param Parameters - generic list of function parameters
+     */
+    template <class ...A> void call(A... Parameters) {
+        if(this->execute_me != nullptr) 
+        {
+                (this->execute_me(Parameters...)); //ignore return value of execute_me
+                return;
+        }
+        else if(this->my_parent != nullptr)
+        {
+            this->my_parent->call(Parameters...);
+            return;
+        }
+        else {
+            throw std::bad_function_call("Function pointer never set.");
+        }
+    }
+    
+     /*
+      * Directly calls the generic function pointer execute_me contained within this object if the return type is non-void
+      * Throws bad function call if pointer is null
+      * @param Parameters - generic list of generic list of comma delimited function parameters
+      * @return Return_Type - generic return type - must be specified in <>
+      */
+    template <class Return_Type, class ...A> Return_Type call(A... Parameters) {
+        if(this->execute_me != nullptr)
+        {
+                return * (Return_Type *) (this->execute_me(Parameters...));
+        }
+        else if (this->my_parent != nullptr)
+        {
+            return this->my_parent->call<Return_Type>(Parameters...);
+        }
+        else
+        {
+            throw std::bad_function_call("Function pointer never set.");
+        }
+    }
 
-    //template <class Return_Type, class ...A> Return_Type operator()(A... Parameters) 
+    /*
+     * Executes a function with no return type by name std::string function_name 
+     * @param function_name - the name of the function
+     * @param Parameters - generic list of function parameters
+     */
+    template<class ...A> void Do(const std::string function_name, A... Parameters) {
+
+        //pcast return_value = nullptr;
+
+        //Calls the corresponding function in the hash table of function objects.
+        try {
+            ((Object *) (my_contents.at((std::string) function_name)))->call(Parameters...);
+            return;
+        }//C++ map throws an exception if function not found.
+        catch (const std::out_of_range& oor) {
+
+            //Check my_parent.
+            if (this->my_parent != nullptr) {
+                this->my_parent->Do(function_name, Parameters...);
+                return;
+            }                //Give up.
+            else {
+                throw std::out_of_range("Function cound not be found.");
+                return;
+            }
+        }
+    }
+
+    /*
+     * Executes a value returning function by name std::string function_name 
+     * @param function_name - the name of the function
+     * @param Parameters - generic list of function parameters
+     * @return Return_Type - generic return type - must be specified in <>
+     */
     template<class Return_Type, class ...A> Return_Type Do(const std::string function_name, A... Parameters) {
 
         //pcast return_value = nullptr;
@@ -178,7 +219,7 @@ public:
         //Calls the corresponding function in the hash table of function objects.
         try {
             // Return_Type = int, Type = const char *, parameters = 1,2 
-            return (Functions_Table.at((std::string) function_name)).Do<Return_Type>(Parameters... );
+            return (my_contents.at((std::string) function_name)).call<Return_Type>(Parameters...);
         }//C++ map throws an exception if function not found.
         catch (const std::out_of_range& oor) {
             //Check my_parent.
@@ -186,20 +227,12 @@ public:
             if (this->my_parent != nullptr)
                 return this->my_parent->Do<Return_Type>(function_name, Parameters...);
                 //Give up.
-            else
-            {
+            else {
                 throw std::out_of_range("Function cound not be found.");
                 Return_Type r;
                 return r;
             }
         }
-    }
-
-    // Assigns a function pointer to an action in the table of actions.
-
-    template< class Type> void set(const std::string function_name, const Type newFunction) {
-
-        (Functions_Table.at(function_name)).execute = (pcast) newFunction;
     }
 
 };
@@ -213,24 +246,7 @@ std::shared_ptr<int> add(int aa, int bb) {
     return return_pointer;
 }
 
-
 int main() {
 
-    Function adder;
-    adder.addVar("var", 5);
-    
-    cout << adder.get<int>("var") << endl;
-    
-    adder.addFunc(add);
-    int n = adder.Do<int>(3,4);
-    cout << n << endl;
-    
-    Object obj;
-    obj.addVar("var", 9);
-    cout << obj.get<int>("var") << endl;
-    
-    obj.addFunc("add", adder);
-    cout << obj.Do<int>("add",1,2) << endl;
-    
     return 0;
 }
