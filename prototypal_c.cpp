@@ -2,7 +2,8 @@
  * Known bugs:
  * Functions cannot pass objects by value
  * If user returns an array with new int[i] the wrong deleter will be called.
- * If user return a non-pointer of size=4,8, it will convert that to a pointer and dereference it[seg fault]
+ * If set passes a non-pointer of size pointer [or if function returns a non-pointer of size pointer], program will convert non-pointer to pointer and dereference [seg fault]
+ * If user extracts a type from a stored void function, an error will result
  * If user uses the wrong return type, it will cast to that return type. 
  * 
  */
@@ -27,35 +28,19 @@ limitations under the License.
  * Created on November 29, 2014, 3:35 PM
  */
 
-using namespace std;
-
-// 64 bit integers used for type identification
-#define ____OBJECT_TYPE -1111111111111111111LL
-
 #include <iostream>
+#include <functional>
+
 #include <unordered_map>
 
 // out_of_range exceptions are thrown by unordered_map
 #include <exception>
 
-#include <memory>
-
-// Function pointer cast produces a function that takes in an arbitrary # of args and returns a void pointer.
+using namespace std;
 typedef void * (*pcast) (...);
-
-struct Object;
-
-/*
- * Checks to see if a value is an object
- * @param value - address of value whose type is being checked
- * @return bool - true if return type is Object
- */
-template <class T> bool isObject(T * value) {
-    return *((long long *) value) == ____OBJECT_TYPE;
-}
-
-/*
- * Dynamic object which is capable of adding static function pointers and values to itself.
+#define ____OBJECT_TYPE -1111111111111111111LL
+/**
+ * @brief Dynamic object which is capable of adding static function pointers and values to itself.
  */
 struct Object {
     // type is stored as a 64 bit value at the head of an object
@@ -71,29 +56,27 @@ struct Object {
     pcast execute_me;
 
     // Default constructor
-
     Object() {
         my_parent = nullptr;
         my_contents = {};
     }
 
     //Frees all the memory used to store items in hash table.
-
     ~Object() {
         for (auto it = my_contents.begin(); it != my_contents.end(); ++it) {
             delete it->second;
         }
     }
 
-    /*
-     * Sets function pointer execute_me to the address of a static function.
+    /**
+     * @brief Sets function pointer execute_me to the address of a static function.
      * @param function_pointer - a generic function pointer
      */
     template <class Type> void setFunc(Type function_pointer) {
 
         //Prevents the user from setting function pointer to an object
-        if (function_pointer == nullptr || (sizeof (function_pointer) != 4 && sizeof (function_pointer) != 8)) {
-            throw std::bad_function_call("Function pointer is null.");
+        if (function_pointer == nullptr || (sizeof (function_pointer) != sizeof (this->execute_me))) {
+            throw std::bad_function_call();
             return;
         } else {
             this->execute_me = (pcast) function_pointer;
@@ -101,10 +84,8 @@ struct Object {
         }
     }
 
-    // Add a copy of a single object property to the properties hash table.
-
-    /*
-     * Add a single object property to the properties hash table with key string::name and generic value. Will leak memory if you pass in new int[] allocate array.
+    /**
+     * @brief Add a single object property to the properties hash table with key string::name and generic value. Will leak memory if you pass in new int[] allocate array.
      * @param name - name that will be used to retrieve value
      * @param value - a generic value to be added
      */
@@ -114,9 +95,8 @@ struct Object {
         my_contents[name] = (void *) (toSet);
     }
 
-    /*
-     * Checks to see if this object has a variable with name value equal to std::string name
-     * Throws out_of_range exception when name cannot be found
+    /**
+     * @brief Checks to see if this object has a variable with name value equal to std::string name. Throws out_of_range exception when name cannot be found.
      * @param name - name of the variable that we are searching for
      * @return true if element of name name can be found in this object or an object somewhere in its parent tree.
      */
@@ -137,9 +117,8 @@ struct Object {
         }
     }
 
-    /*
-     * Retrieves an element from this object with non-void return type
-     * Throws out_of_range exception when name cannot be found
+    /**
+     * @brief Retrieves an element from this object with non-void return type. Throws out_of_range exception when name not found.
      * @param name - string name of the variable that we are searching for
      * @return Return_Type - return type which must be specified in angle brackets
      */
@@ -161,9 +140,8 @@ struct Object {
         }
     }
 
-    /*
-     * Directly calls the generic function pointer execute_me if the return type is void.
-     * Throws bad function call if pointer is null. Will leaks memory if used with a non-void  function.
+    /**
+     * @brief Directly calls the generic function pointer execute_me if the return type is void. Throws bad function call if pointer is null. Will leaks memory if used with a non-void  function.
      * @param Parameters - generic list of function parameters
      */
     template <class ...A> void call(A... Parameters) {
@@ -174,13 +152,12 @@ struct Object {
             this->my_parent->call(Parameters...);
             return;
         } else {
-            throw std::bad_function_call("Function pointer never set.");
+            throw std::bad_function_call();
         }
     }
 
-    /*
-     * Directly calls the generic function pointer execute_me contained within this object if the return type is non-void
-     * Throws bad function call if pointer is null
+    /**
+     * @brief Directly calls the generic function pointer execute_me contained within this object if the return type is non-void. hrows bad function call if pointer is null. If you use this with a function that does not return with new, an error must occur.
      * @param Parameters - generic list of generic list of comma delimited function parameters
      * @return Return_Type - generic return type - must be specified in <>
      */
@@ -193,12 +170,12 @@ struct Object {
         } else if (this->my_parent != nullptr) {
             return this->my_parent->call<Return_Type>(Parameters...);
         } else {
-            throw std::bad_function_call("Function pointer never set.");
+            throw std::bad_function_call();
         }
     }
 
-    /*
-     * Executes a function with no return type by its function name 
+    /**
+     * @brief Executes a function with no return type by its function name 
      * @param function_name - the key name of the function as a std::string
      * @param Parameters - generic list of function parameters
      */
@@ -207,8 +184,8 @@ struct Object {
         try {
             Object * isObject = (Object *) (my_contents.at((std::string) function_name));
 
-            if (!::is_object<Object>(isObject)) {
-                throw std::bad_function_call("Element referenced by std::string function_name cannot use an object function call.");
+            if (!(isObject->my_type == ____OBJECT_TYPE)) {
+                throw std::bad_function_call(); // std::bad_function_call("Element referenced by std::string function_name cannot use an object function call.");
                 return;
             }
 
@@ -232,28 +209,35 @@ struct Object {
     }
 
     /*
-     * Executes a value-returning function by its function name 
+     * @brief Executes a value-returning function by its function name 
      * @param function_name - the key name of the function as a std::string
      * @param Parameters - generic list of function parameters
      * @return Return_Type - generic return type - must be specified in <>
      */
     template<class Return_Type, class ...A> Return_Type Do(const std::string function_name, A... Parameters) {
 
+        std::cout << "Endering Do<>" << std::endl;
         try {
             Object * isObject = (Object *) (my_contents.at((std::string) function_name));
 
-            if (!::is_object<Object>(isObject)) {
-                throw std::bad_function_call("Element referenced by std::string function_name cannot use the object function call.");
-                return;
+            std::cout << "Object accessed" << std::endl;
+            std::cout << isObject->my_type << std::endl;
+
+            if (!(isObject->my_type == ____OBJECT_TYPE)) {
+                std::cout << "Seg fault..............." << std::endl;
+                throw std::bad_function_call();
+                Return_Type r;
+                return r;
             }
 
+            std::cout << "Type checked" << std::endl;
             //Calls the corresponding function in the hash table of function objects.
 
             return isObject->call<Return_Type>(Parameters...);
         }//C++ map throws an exception if function not found.
         catch (const std::out_of_range& oor) {
             //Check my_parent.
-            cout << "Value not found" << endl;
+            std::cout << "Value not found" << std::endl;
             if (this->my_parent != nullptr)
                 return this->my_parent->Do<Return_Type>(function_name, Parameters...);
                 //Give up.
@@ -266,17 +250,3 @@ struct Object {
     }
 
 };
-
-//#define a auto
-#define s std::string
-
-std::shared_ptr<int> add(int aa, int bb) {
-    //std::shared_ptr<int> return_pointer(new int(aa + bb));
-    auto return_pointer = std::make_shared<int>(aa + bb);
-    return return_pointer;
-}
-
-int main() {
-
-    return 0;
-}
