@@ -56,7 +56,7 @@ struct Object {
     // contents table stores persistent variables and other objects
     std::unordered_map<std::string, void * > my_contents;
 
-    // re-assignable pointer to parent of this object.
+    // re-assignable pointer to parent of this object. Function in this class will use this pointer to go up the inheritance hierarchy.
     Object * my_parent;
 
     // re-assignable function pointer - set with Object::setFunc and called with Object::call<Return_Type>
@@ -137,7 +137,7 @@ struct Object {
     }
 
     /*
-     * Directly calls the generic function pointer execute_me contained within this object if the return type is void
+     * Directly calls the generic function pointer execute_me if the return type is void.
      * Throws bad function call if pointer is null
      * @param Parameters - generic list of function parameters
      */
@@ -179,8 +179,8 @@ struct Object {
     }
 
     /*
-     * Executes a function with no return type by name std::string function_name 
-     * @param function_name - the name of the function
+     * Executes a function with no return type by its function name 
+     * @param function_name - the key name of the function as a std::string
      * @param Parameters - generic list of function parameters
      */
     template<class ...A> void Do(const std::string function_name, A... Parameters) {
@@ -207,8 +207,8 @@ struct Object {
     }
 
     /*
-     * Executes a value returning function by name std::string function_name 
-     * @param function_name - the name of the function
+     * Executes a value-returning function by its function name 
+     * @param function_name - the key name of the function as a std::string
      * @param Parameters - generic list of function parameters
      * @return Return_Type - generic return type - must be specified in <>
      */

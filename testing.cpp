@@ -1,38 +1,15 @@
-/*
- * Known bugs:
- * Functions cannot pass objects by value
- * If user returns an array with new int[i] the wrong deleter will be called.
- * If user return a non-pointer of size=4,8, it will convert that to a pointer and dereference it[seg fault]
- * If user uses the wrong return type, it will cast to that return type. 
- * 
- */
-
-/*
-Copyright [2014] [John-Michael Reed]
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-    http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
- */
-
 /* 
- * File:   main.cpp
+ * File:   newsimpletest3.cpp
  * Author: johnmichaelreed2
  *
- * Created on November 29, 2014, 3:35 PM
+ * Created on Dec 5, 2014, 9:10:20 PM
  */
 
-using namespace std;
-
-// 64 bit integers used for type identification
-#define ____OBJECT_TYPE -1111111111111111111LL
-
+#include <stdlib.h>
+#include <stdlib.h>
 #include <iostream>
+#include <functional>
+
 #include <unordered_map>
 
 // out_of_range exceptions are thrown by unordered_map
@@ -40,23 +17,16 @@ using namespace std;
 
 #include <memory>
 
-// Function pointer cast produces a function that takes in an arbitrary # of args and returns a void pointer.
-typedef void * (*pcast) (...);
-
-struct Object;
-
 /*
- * Checks to see if a value is an object
- * @param value - address of value whose type is being checked
- * @return bool - true if return type is Object
+ * Simple C++ Test Suite
  */
-template <class T> bool isObject(T * value) {
-    return *((long long *) value) == ____OBJECT_TYPE;
-}
-
+typedef void * (*pcast) (...);
+#define ____OBJECT_TYPE -1111111111111111111LL
 /*
  * Dynamic object which is capable of adding static function pointers and values to itself.
  */
+using namespace std;
+
 struct Object {
     // type is stored as a 64 bit value at the head of an object
     const long long my_type = ____OBJECT_TYPE;
@@ -92,8 +62,8 @@ struct Object {
     template <class Type> void setFunc(Type function_pointer) {
 
         //Prevents the user from setting function pointer to an object
-        if (function_pointer == nullptr || (sizeof (function_pointer) != 4 && sizeof (function_pointer) != 8)) {
-            throw std::bad_function_call("Function pointer is null.");
+        if (function_pointer == nullptr || (sizeof (function_pointer) != sizeof (this->execute_me))) {
+            throw std::bad_function_call();
             return;
         } else {
             this->execute_me = (pcast) function_pointer;
@@ -174,13 +144,13 @@ struct Object {
             this->my_parent->call(Parameters...);
             return;
         } else {
-            throw std::bad_function_call("Function pointer never set.");
+            throw std::bad_function_call();
         }
     }
 
     /*
      * Directly calls the generic function pointer execute_me contained within this object if the return type is non-void
-     * Throws bad function call if pointer is null
+     * Throws bad function call if pointer is null. If you use this with a function that does not return with new, an error must occur.
      * @param Parameters - generic list of generic list of comma delimited function parameters
      * @return Return_Type - generic return type - must be specified in <>
      */
@@ -193,7 +163,7 @@ struct Object {
         } else if (this->my_parent != nullptr) {
             return this->my_parent->call<Return_Type>(Parameters...);
         } else {
-            throw std::bad_function_call("Function pointer never set.");
+            throw std::bad_function_call();
         }
     }
 
@@ -207,8 +177,8 @@ struct Object {
         try {
             Object * isObject = (Object *) (my_contents.at((std::string) function_name));
 
-            if (!::is_object<Object>(isObject)) {
-                throw std::bad_function_call("Element referenced by std::string function_name cannot use an object function call.");
+            if (!(isObject->my_type == ____OBJECT_TYPE)) {
+                throw std::bad_function_call(); // std::bad_function_call("Element referenced by std::string function_name cannot use an object function call.");
                 return;
             }
 
@@ -239,21 +209,28 @@ struct Object {
      */
     template<class Return_Type, class ...A> Return_Type Do(const std::string function_name, A... Parameters) {
 
+        std::cout << "Endering Do<>" << std::endl;
         try {
             Object * isObject = (Object *) (my_contents.at((std::string) function_name));
 
-            if (!::is_object<Object>(isObject)) {
-                throw std::bad_function_call("Element referenced by std::string function_name cannot use the object function call.");
-                return;
+            std::cout << "Object accessed" << std::endl;
+            std::cout << isObject->my_type << std::endl;
+
+            if (!(isObject->my_type == ____OBJECT_TYPE)) {
+                std::cout << "Seg fault..............." << std::endl;
+                throw std::bad_function_call();
+                Return_Type r;
+                return r;
             }
 
+            std::cout << "Type checked" << std::endl;
             //Calls the corresponding function in the hash table of function objects.
 
             return isObject->call<Return_Type>(Parameters...);
         }//C++ map throws an exception if function not found.
         catch (const std::out_of_range& oor) {
             //Check my_parent.
-            cout << "Value not found" << endl;
+            std::cout << "Value not found" << std::endl;
             if (this->my_parent != nullptr)
                 return this->my_parent->Do<Return_Type>(function_name, Parameters...);
                 //Give up.
@@ -267,16 +244,172 @@ struct Object {
 
 };
 
-//#define a auto
-#define s std::string
+bool is_object(Object* value);
 
-std::shared_ptr<int> add(int aa, int bb) {
-    //std::shared_ptr<int> return_pointer(new int(aa + bb));
-    auto return_pointer = std::make_shared<int>(aa + bb);
-    return return_pointer;
+//global object that all the tests will use
+Object obj;
+
+void testIs_object() {
+    //Object* value;
+    //bool result = is_object(value);
+    //if (true /*check result*/) {
+    //    std::cout << "%TEST_FAILED% time=0 testname=testIs_object (newsimpletest3) message=error message sample" << std::endl;
+    //}
 }
 
-int main() {
+void testDo() {
+    char b = 2;
+    obj.set("lala", b);
 
-    return 0;
+    try {
+        obj.Do("lala", 1, 2, 3, 4); //This should throw an exception because b is not a function object
+        std::cout << "%TEST_FAILED% time=0 testname=testDo (newsimpletest3) message=error message sample" << std::endl;
+    } catch (std::bad_function_call ee) {
+        std::cout << "good1" << std::endl; //expected output
+    } catch (std::out_of_range f) {
+        std::cout << "good2" << std::endl;
+    }
 }
+
+void testDo2() {
+    char b = 2;
+    obj.set("lala", b);
+
+    try {
+        obj.Do<int>("lala", 1, 2, 3, 4); //This should throw an exception because b is not a function object
+        std::cout << "%TEST_FAILED% time=0 testname=testDo (newsimpletest3) message=error message sample" << std::endl;
+    } catch (std::bad_function_call ee) {
+        std::cout << "good1" << std::endl; //expected output
+    } catch (std::out_of_range f) {
+        std::cout << "good2" << std::endl;
+    }
+}
+
+void testObject() {
+    Object object1;
+    if (! (object1.my_type == ____OBJECT_TYPE)) {
+        std::cout << "%TEST_FAILED% time=0 testname=testObject (newsimpletest3) message=error message sample" << std::endl;
+    }
+}
+
+void printv() {
+    std::cout << "print" << std::endl;
+    return;
+}
+
+void testCall() {
+    try {
+        obj.setFunc(::printv);
+        obj.call(); //try this with a void returning function or with parameter void and see what happens.
+    } catch (std::exception x) {
+        std::cout << "%TEST_FAILED% time=0 testname=testCall2 (newsimpletest3) message=error message sample" << std::endl;
+    }
+}
+
+int print() {
+    std::cout << "print" << std::endl;
+    return 5;
+}
+
+void testCall2() {
+
+    obj.setFunc(::print);
+    int ret = obj.call<int>();
+
+    if (!(ret == 5)) {
+        std::cout << "%TEST_FAILED% time=0 testname=testCall (newsimpletest3) message=error message sample" << std::endl;
+    }
+}
+/*
+void testGet() {
+    const std::string& name;
+    Object object;
+    Return_Type result = object.get(name);
+    if (true ) {
+        std::cout << "%TEST_FAILED% time=0 testname=testGet (newsimpletest3) message=error message sample" << std::endl;
+    }
+}
+
+void testHas() {
+    const std::string& name;
+    Object object;
+    bool result = object.has(name);
+    if (true ) {
+        std::cout << "%TEST_FAILED% time=0 testname=testHas (newsimpletest3) message=error message sample" << std::endl;
+    }
+}
+
+void testSet() {
+    const std::string name;
+    const Type& value;
+    Object object;
+    object.set(name, value);
+    if (true ) {
+        std::cout << "%TEST_FAILED% time=0 testname=testSet (newsimpletest3) message=error message sample" << std::endl;
+    }
+}
+
+void testSetFunc() {
+    Type function_pointer;
+    Object object;
+    object.setFunc(function_pointer);
+    if (true ) {
+        std::cout << "%TEST_FAILED% time=0 testname=testSetFunc (newsimpletest3) message=error message sample" << std::endl;
+    }
+}
+*/
+
+int main(int argc, char** argv) {
+    std::cout << "%SUITE_STARTING% newsimpletest3" << std::endl;
+    std::cout << "%SUITE_STARTED%" << std::endl;
+
+    std::cout << "%TEST_STARTED% testIs_object (newsimpletest3)" << std::endl;
+    testIs_object();
+    std::cout << "%TEST_FINISHED% time=0 testIs_object (newsimpletest3)" << std::endl;
+
+    std::cout << "%TEST_STARTED% testDo (newsimpletest3)" << std::endl;
+    testDo();
+    std::cout << "%TEST_FINISHED% time=0 testDo (newsimpletest3)" << std::endl;
+
+    std::cout << "%TEST_STARTED% testDo2 (newsimpletest3)" << std::endl;
+    testDo2();
+    std::cout << "%TEST_FINISHED% time=0 testDo2 (newsimpletest3)" << std::endl;
+
+    std::cout << "%TEST_STARTED% testObject (newsimpletest3)" << std::endl;
+    testObject();
+    std::cout << "%TEST_FINISHED% time=0 testObject (newsimpletest3)" << std::endl;
+
+    std::cout << "%TEST_STARTED% testCall (newsimpletest3)" << std::endl;
+    testCall();
+    std::cout << "%TEST_FINISHED% time=0 testCall (newsimpletest3)" << std::endl;
+
+    std::cout << "%TEST_STARTED% testCall2 (newsimpletest3)" << std::endl;
+    testCall2();
+    std::cout << "%TEST_FINISHED% time=0 testCall2 (newsimpletest3)" << std::endl;
+
+    /*
+    
+    std::cout << "%TEST_STARTED% testGet (newsimpletest3)" << std::endl;
+    testGet();
+    std::cout << "%TEST_FINISHED% time=0 testGet (newsimpletest3)" << std::endl;
+
+    std::cout << "%TEST_STARTED% testHas (newsimpletest3)" << std::endl;
+    testHas();
+    std::cout << "%TEST_FINISHED% time=0 testHas (newsimpletest3)" << std::endl;
+
+    std::cout << "%TEST_STARTED% testSet (newsimpletest3)" << std::endl;
+    testSet();
+    std::cout << "%TEST_FINISHED% time=0 testSet (newsimpletest3)" << std::endl;
+
+    std::cout << "%TEST_STARTED% testSetFunc (newsimpletest3)" << std::endl;
+    testSetFunc();
+    std::cout << "%TEST_FINISHED% time=0 testSetFunc (newsimpletest3)" << std::endl;
+
+    std::cout << "%SUITE_FINISHED% time=0" << std::endl;
+     
+    */
+
+    return (EXIT_SUCCESS);
+}
+
+
