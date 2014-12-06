@@ -6,8 +6,8 @@ Prototypal_C is a header implementing a class that allows users to write dynamic
 Example: 
   Object object;
   int x = 5;
-  object.set("x",x);              // add a new member x to object and set its name to "x"
-  int i = object.get<int>("x");   // get member of type int whose name is "x". returns 5
+  object.set("x",x);              // add a new member x to object and set its name to "x".
+  int i = object.get<int>("x");   // get member of type int whose name is "x". returns 5.
 
 ===================================================================================================================
 
@@ -15,8 +15,8 @@ One member function can be called directly using the "call" method, which avoids
 
 Example:
   static void print() {std::cout << "hello world" << std::endl;} 
-  object.setFunc("print",print);  // sets object's function pointer to the print function
-  object.call();                  // directly calls the print function 
+  object.setFunc("print",print);  // sets object's function pointer to the print function.
+  object.call();                  // directly calls the print function. 
 
 
 ===================================================================================================================
@@ -26,8 +26,8 @@ Note that only static global functions, non-static global functions, and non-sta
 
 Example:
   void func(Object * o, int x) {} 
-  object.setFunc("func",func);    // sets object's function pointer to the func function
-  object.call(&object, x);        // directly calls the func function
+  object.setFunc("func",func);    // sets object's function pointer to the func function.
+  object.call(&object, x);        // directly calls the func function.
   
   
 ===================================================================================================================
@@ -37,7 +37,7 @@ Also note that for functions returning non-void, the return type must be a point
 
 Example:
   int * add(int x, int y) {return new int(x+y);}
-  object.setFunc("add",add);      // sets object's function pointer to the add function
+  object.setFunc("add",add);      // sets object's function pointer to the add function.
   x = object.call<int>(5, 6);     // returns 11. The dereferenced return type is specified in angle brackets.
 
 
@@ -67,7 +67,7 @@ Example:
 Indirect function calls can also be performed. Objects which can directly call a function can be placed inside of other objects using the "object.set(std::string name, Type T)" method. An outer object can call an inner object by with the method "object.Do<Return_Type T>(std::string name, Parameter_Pack P)". 
 
 Example:
-  object.set("child", child);     // add a new member child to object and set its name to "child" 
+  object.set("child", child);     // add a new member child to object and set its name to "child". 
   object.Do<int>("child", 5, 6);  // tells member whose name is "child" to perform the call function. 
   
   
