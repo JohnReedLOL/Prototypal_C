@@ -74,4 +74,14 @@ Example:
 ===================================================================================================================
 
   
-  Note that "Object child" is inside of "Object object" and that "Object child" has access to "Object object".
+  Note that "Object child" is inside of "Object object" and that "Object child" has access to "Object object". This pattern can also be applied to subclasses of Object. 
+  
+For Example:
+
+  class Computer : public Object {};
+  class Printer : public Object {};
+  Computer comp;
+  printer p;
+  p.setFunc("print",print);
+  comp.set("print",p);
+  comp.Do("print");               // Computer calls Printer's print function.
