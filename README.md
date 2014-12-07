@@ -5,10 +5,15 @@ Prototypal_C
  function. 
 
 //Example: 
+
   Object object;
+  
   int x = 5;
+  
   object.set("x",x);              // add a new member x to object and set its name to "x".
+  
   int i = object.get<int>("x");   // get member of type int whose name is "x".
+  
   std::cout << i << std::endl;    // print 5.
 
 //=======================================================================
@@ -16,8 +21,11 @@ Prototypal_C
 //One member function can be called directly using the "call" method, which avoids the overhead of object storage and retrieval. This feature allows members of type Object to have their own persistent variables.
 
 //Example:
+
   struct ss{static void print() {std::cout << "hello world" << std::endl;} };
+  
   object.setFunc(ss::print);  // sets object's function pointer to the print function.
+  
   object.call();                  // directly calls the print function. 
 
 
@@ -29,20 +37,27 @@ Prototypal_C
   
   
 //Example:
+
   struct vv {static void func(Object * o, int x) {} };
+  
   object.setFunc(vv::func );    // sets object's function pointer to the func function.
+  
   Object * ob = &object;
+  
   object.call(ob, x);        // directly calls the func function.
+  
 //=====================================================================
 
  
-    
 //Also note that for functions returning non-void, the return type must be a pointer whose contents will be allocated on heap.
 
 //Example:
   struct ww {static int * add(int x, int y) {return new int(x+y);} };
+  
   object.setFunc(ww::add);      // sets object's function pointer to the add function.
+  
   x = object.call<int>(5, 6);     // returns 11. The dereferenced return type is specified in angle brackets.
+  
   std::cout << x << std::endl;
     
 //=====================================================================
@@ -52,8 +67,11 @@ Prototypal_C
 
 //Example:
   Object child;
+  
   child.my_parent = &object;
+  
   object.my_parent = nullptr;
+  
   std::cout << object.get<int>("x") << std::endl;           // gets the member of type int whose name is "x" from object. prints 5.
   
 
@@ -63,6 +81,7 @@ Prototypal_C
 //Direct function calls can also be designated object parent if they are equal to the default value, nullptr, in the child.
 
 //Example:
+
   std::cout << child.call<int>(5, 6) << std::endl;         // returns 11. The dereferenced return type is specified in angle brackets.
 
 
@@ -72,7 +91,9 @@ Prototypal_C
 //Indirect function calls can also be performed. Objects which can directly call a function can be placed inside of other objects using the "object.set(std::string name, Type T)" method. An outer object can call an inner object by with the method "object.Do<Return_Type T>(std::string name, Parameter_Pack P)". 
 
 //Example:
+
   object.set("child", child);     // add a new member child to object and set its name to "child". 
+  
   std::cout << object.Do<int>("child", 5, 6) << std::endl;  // tells member whose name is "child" to perform the call function. 
   
  
@@ -84,11 +105,17 @@ Prototypal_C
 //For Example:
 
   class Computer : public Object {};
+  
   class Printer : public Object {};
+  
   Computer comp;
+  
   Printer p;
+  
   p.setFunc(ss::print);
+  
   comp.set("print",p);
+  
   comp.Do("print");               // Computer calls Printer's print function.
 
   =======================================================================
