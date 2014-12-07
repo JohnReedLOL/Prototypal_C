@@ -1,12 +1,11 @@
 /*
  * Known bugs:
- * Functions cannot pass objects by value, only by pointer
- * If user returns an array with new int[i] the wrong deleter will be called.
- * If user return a non-pointer of size pointer, it will convert that to a pointer and dereferenced[seg fault]
- * If user uses the wrong return type, it will cast to that return type. 
- * If the user leaves out the return type and the function returns, a memory leak will occur
- * For safety reasons, consider storing typeid of every value stored
- * For performance reasons, consider replacing void * with unique *
+ * Functions cannot pass objects by value, only by pointer. Will not compile if object is passed by value.
+ * If user returns an array with new int[i] the wrong deleter will be called. Use of unique_ptr would forbid this.
+ * If user return a non-pointer of size pointer, it will convert that to a pointer and dereferenced[seg fault]. Use of unique_ptr would make that a compile error.
+ * If user uses the wrong return type, it will cast to that return type. Use of return typeid storage can prevent this.
+ * If the user leaves out the return type and the function returns, a memory leak will occur. Use of unique_ptr would prevent this.
+ * For performance reasons, consider replacing void * with unique_ptr
  */
 
 /*
@@ -106,7 +105,7 @@ public:
      * @param name - name that will be used to retrieve value
      * @param value - a generic value to be added
      */
-    template <class Type> void set(const std::string name, const Type &value) {
+    template <class Type> void set(const std::string &name, const Type &value) {
         Type * toSet = new Type;
         *toSet = value;
         my_contents[name] = (void *) (toSet);
@@ -208,7 +207,7 @@ public:
      * @param function_name - the key name of the function as a std::string
      * @param Parameters - generic list of function parameters
      */
-    template<class ...A> void Do(const std::string function_name, A... Parameters) {
+    template<class ...A> void Do(const std::string &function_name, A... Parameters) {
         try {
             Object * isObject = (Object *) (my_contents.at((std::string) function_name));
             if (!(isObject->my_type == ____OBJECT_TYPE)) {
@@ -243,7 +242,7 @@ public:
      * @param Parameters - generic list of function parameters
      * @return Return_Type - generic return type - must be specified in <>
      */
-    template<class Return_Type, class ...A> Return_Type Do(const std::string function_name, A... Parameters) {
+    template<class Return_Type, class ...A> Return_Type Do(const std::string &function_name, A... Parameters) {
 
         try {
             Object * isObject = (Object *) (my_contents.at((std::string) function_name));
