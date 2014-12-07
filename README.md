@@ -1,10 +1,7 @@
 Prototypal_C
 ============
 
- Prototypal_C is a header implementing a class that allows users to write dynamic, type-safe, prototypal inheritance based c++ code. The Object class contained within this header can be instantiated to create generic containers capable of augmenting themselves with members and functions of various types. Members are accessed indirectly by passing a string to a "get" 
- function. 
-
-//Example: 
+ Prototypal_C is a header implementing a class that allows users to write dynamic, type-safe, prototypal inheritance based c++ code. The Object class contained within this header can be instantiated to create generic containers capable of augmenting themselves with members and functions of various types. Members are accessed indirectly by passing a string to a "get" function. For example: 
 
   Object object;
   
@@ -20,8 +17,6 @@ Prototypal_C
 
 //One member function can be called directly using the "call" method, which avoids the overhead of object storage and retrieval. This feature allows members of type Object to have their own persistent variables.
 
-//Example:
-
   struct ss{static void print() {std::cout << "hello world" << std::endl;} };
   
   object.setFunc(ss::print);  // sets object's function pointer to the print function.
@@ -34,9 +29,6 @@ Prototypal_C
 
 //Note that only static global functions, non-static global functions, and non-static class member functions can be passed using setFunc() and call(). Member functions setFunc() and call() can also be used to pass parameters of primitive types or pointers to class types. 
 
-  
-  
-//Example:
 
   struct vv {static void func(Object * o, int x) {} };
   
@@ -49,9 +41,8 @@ Prototypal_C
 //=====================================================================
 
  
-//Also note that for functions returning non-void, the return type must be a pointer whose contents will be allocated on heap.
+//Also note that for functions returning non-void, the return type must be a pointer whose contents will be allocated on heap. The object will free the memory internally.
 
-//Example:
   struct ww {static int * add(int x, int y) {return new int(x+y);} };
   
   object.setFunc(ww::add);      // sets object's function pointer to the add function.
@@ -63,9 +54,8 @@ Prototypal_C
 //=====================================================================
 
 
-//Members of type Object can designate a parent and pass searches for variables and function calls to their parent.
+//Members of type Object can designate a parent and pass searches for variables and function calls to their parent. For example:
 
-//Example:
   Object child;
   
   child.my_parent = &object;
@@ -78,9 +68,7 @@ Prototypal_C
 //=====================================================================
 
   
-//Direct function calls can also be designated object parent if they are equal to the default value, nullptr, in the child.
-
-//Example:
+// Direct function calls can also be passed up to the object's parent if the function call wasn't set in the child.
 
   std::cout << child.call<int>(5, 6) << std::endl;         // returns 11. The dereferenced return type is specified in angle brackets.
 
@@ -89,8 +77,6 @@ Prototypal_C
 
 
 //Indirect function calls can also be performed. Objects which can directly call a function can be placed inside of other objects using the "object.set(std::string name, Type T)" method. An outer object can call an inner object by with the method "object.Do<Return_Type T>(std::string name, Parameter_Pack P)". 
-
-//Example:
 
   object.set("child", child);     // add a new member child to object and set its name to "child". 
   
@@ -101,8 +87,6 @@ Prototypal_C
 
   
   //Note that "Object child" is inside of "Object object" and that "Object child" has access to "Object object". This pattern can also be applied to subclasses of Object. 
-  
-//For Example:
 
   class Computer : public Object {};
   
