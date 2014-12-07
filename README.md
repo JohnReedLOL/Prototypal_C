@@ -13,7 +13,7 @@ Prototypal_C
   
   std::cout << i << std::endl;    // print 5.
 
-//=======================================================================
+//==========================================================================================
 
 //One member function can be called directly using the "call" method, which avoids the overhead of object storage and retrieval. This feature allows members of type Object to have their own persistent variables.
 
@@ -24,7 +24,7 @@ Prototypal_C
   object.call();                  // directly calls the print function. 
 
 
-//======================================================================
+//=======================================================================================
 
 
 //Note that only static global functions, non-static global functions, and non-static class member functions can be passed using setFunc() and call(). Member functions setFunc() and call() can also be used to pass parameters of primitive types or pointers to class types. 
@@ -38,7 +38,7 @@ Prototypal_C
   
   object.call(ob, x);        // directly calls the func function.
   
-//=====================================================================
+//=======================================================================================
 
  
 //Also note that for functions returning non-void, the return type must be a pointer whose contents will be allocated on heap. The object will free the memory internally.
@@ -51,7 +51,7 @@ Prototypal_C
   
   std::cout << x << std::endl;
     
-//=====================================================================
+//===========================================================================================
 
 
 //Members of type Object can designate a parent and pass searches for variables and function calls to their parent. For example:
@@ -65,7 +65,7 @@ Prototypal_C
   std::cout << object.get<int>("x") << std::endl;           // gets the member of type int whose name is "x" from object. prints 5.
   
 
-//=====================================================================
+//=============================================================================================
 
   
 // Direct function calls can also be passed up to the object's parent if the function call wasn't set in the child.
@@ -73,7 +73,7 @@ Prototypal_C
   std::cout << child.call<int>(5, 6) << std::endl;         // returns 11. The dereferenced return type is specified in angle brackets.
 
 
-//=======================================================================
+//==============================================================================================
 
 
 //Indirect function calls can also be performed. Objects which can directly call a function can be placed inside of other objects using the "object.set(std::string name, Type T)" method. An outer object can call an inner object by with the method "object.Do<Return_Type T>(std::string name, Parameter_Pack P)". 
@@ -83,7 +83,7 @@ Prototypal_C
   std::cout << object.Do<int>("child", 5, 6) << std::endl;  // tells member whose name is "child" to perform the call function. 
   
  
-======================================================================
+===================================================================================================
 
   
   //Note that "Object child" is inside of "Object object" and that "Object child" has access to "Object object". This pattern can also be applied to subclasses of Object. 
@@ -102,6 +102,6 @@ Prototypal_C
   
   comp.Do("print");               // Computer calls Printer's print function.
 
-  =======================================================================
+  =====================================================================================================
   
  In conclusion, by using the Prototypal_C header with the above functions and design patterns, c++ programmers can implement various design patterns and programming techniques that are not readily availible in the language. 
