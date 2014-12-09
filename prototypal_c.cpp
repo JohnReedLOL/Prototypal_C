@@ -1,11 +1,14 @@
 /*
  * Known bugs:
  * Functions cannot pass objects by value, only by pointer. Will not compile if object is passed by value.
- * If user returns an array with new int[i] the wrong deleter will be called. Use of unique_ptr would forbid this.
- * If user return a non-pointer of size pointer, it will convert that to a pointer and dereferenced[seg fault]. Use of unique_ptr would make that a compile error.
+ * If user return a non-pointer of size pointer, it will convert that to a pointer and dereferenced[seg fault]. 
  * If user uses the wrong return type, it will cast to that return type. Use of return typeid storage can prevent this.
- * If the user leaves out the return type and the function returns, a memory leak will occur. Use of unique_ptr would prevent this.
- * Use templates or type storage or something to avoid deleting a void*
+ *
+ * Ideas:
+ * For setFunc, store typeinfo struct as property in object.
+ * For call, have option of specifying the function type to check type and return the origional function pointer. Safer, faster, and can share function pointer with other Objects.
+ * For set, store typeinfo struct in hash table as struct which also contains sharedptr. For get, compare typeinfo before retrievings
+ * Can also be implemented with size of object [slightly faster, slightly more flexible, less safe, less predictable]
  */
 
 /*
@@ -38,6 +41,7 @@ limitations under the License.
 
 //For bad_function_call
 #include <functional>
+#include <memory>
 
 // Function pointer cast produces a function that takes in an arbitrary # of args and returns a void pointer.
 typedef void * (*pcast) (...);
@@ -51,7 +55,7 @@ class Object {
     const long long my_type = ____OBJECT_TYPE;
 
     // contents table stores persistent variables and other objects
-    std::unordered_map<std::string, void * > my_contents;
+    std::unordered_map<std::string, std::shared_ptr<void> > my_contents; //When a shared_ptr is copied (or default constructed) from another the deleter is passed around, so that when you construct a shared_ptr<T> from a shared_ptr<U> the information on what destructor to call is also passed around in the deleter
 public:
     // re-assignable pointer to parent of this object. Function in this class will use this pointer to go up the inheritance hierarchy.
     Object * my_parent;
@@ -69,11 +73,14 @@ public:
 
     //Frees all the memory used to store items in hash table.
 
+    /*
     ~Object() {
-        for (auto it = my_contents.begin(); it != my_contents.end(); ++it) {
-            delete it->second; //Undefined behavior. Does not work on classes.
+            delete it->second; //There is no valid way of freeing a pointer except         for (auto it = my_contents.begin(); it != my_contents.end(); ++it) {
+through its original type
         }
     }
+    */
+    
     Object& operator =(const Object &other) {
         this->my_contents = other.my_contents;
         this->my_parent = other.my_parent;
@@ -106,7 +113,7 @@ public:
      * @param value - a generic value to be added
      */
     template <class Type> void set(const std::string &name, const Type &value) {\
-        my_contents[name] = new Type(value);
+        my_contents[name] = std::make_shared<Type>(value);
         return;
     }
 
@@ -143,7 +150,7 @@ public:
 
         //If the element exists, get it.
         try {
-            return * ((Return_Type *) (this->my_contents.at(name)));
+            return * ((std::static_pointer_cast<Return_Type>)(this->my_contents.at(name)));
         }//Else check to see if the my_parent has it
         catch (const std::out_of_range& oor) {
 
@@ -207,7 +214,7 @@ public:
      */
     template<class ...A> void Do(const std::string &function_name, A... Parameters) {
         try {
-            Object * isObject = (Object *) (my_contents.at((std::string) function_name));
+            std::shared_ptr<Object> isObject = (std::static_pointer_cast<Object>)(my_contents.at((std::string) function_name));
             if (!(isObject->my_type == ____OBJECT_TYPE)) {
                 std::cerr << "Element referenced by std::string function_name cannot use an object function call." << std::endl;
                 throw std::bad_function_call();
@@ -243,7 +250,7 @@ public:
     template<class Return_Type, class ...A> Return_Type Do(const std::string &function_name, A... Parameters) {
 
         try {
-            Object * isObject = (Object *) (my_contents.at((std::string) function_name));
+            std::shared_ptr<Object> isObject = (std::static_pointer_cast<Object>)(my_contents.at((std::string) function_name));
 
             if (!(isObject->my_type == ____OBJECT_TYPE)) {
                 std::cerr << "Element referenced by std::string function_name cannot use an object function call." << std::endl;
