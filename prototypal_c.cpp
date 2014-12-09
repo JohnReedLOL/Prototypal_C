@@ -5,7 +5,7 @@
  * If user return a non-pointer of size pointer, it will convert that to a pointer and dereferenced[seg fault]. Use of unique_ptr would make that a compile error.
  * If user uses the wrong return type, it will cast to that return type. Use of return typeid storage can prevent this.
  * If the user leaves out the return type and the function returns, a memory leak will occur. Use of unique_ptr would prevent this.
- * For performance reasons, consider replacing void * with unique_ptr
+ * Use templates or type storage or something to avoid deleting a void*
  */
 
 /*
@@ -71,7 +71,7 @@ public:
 
     ~Object() {
         for (auto it = my_contents.begin(); it != my_contents.end(); ++it) {
-            delete it->second;
+            delete it->second; //Undefined behavior. Does not work on classes.
         }
     }
     Object& operator =(const Object &other) {
@@ -105,10 +105,8 @@ public:
      * @param name - name that will be used to retrieve value
      * @param value - a generic value to be added
      */
-    template <class Type> void set(const std::string &name, const Type &value) {
-        Type * toSet = new Type;
-        *toSet = value;
-        my_contents[name] = (void *) (toSet);
+    template <class Type> void set(const std::string &name, const Type &value) {\
+        my_contents[name] = new Type(value);
         return;
     }
 
