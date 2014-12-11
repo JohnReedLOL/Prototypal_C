@@ -312,8 +312,8 @@ int main() {
   
   
 //Example:
-  //struct vv {static void func(Object * o, int x) {} };
-  object.setFunc( void[](Object * o, int x){} );    // sets object's function pointer to the lambda expression.
+  struct vv {static void func(Object * o, int x) {} };
+  object.setFunc( vv::func );    // sets object's function pointer to function func.
   Object * ob = &object;
   object.call(ob, x);        // directly calls the func function.
 //===================================================================================================================
