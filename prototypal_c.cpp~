@@ -8,7 +8,7 @@
  * For setFunc, store typeinfo struct as property in object.
  * For call, have option of specifying the function type to check type and return the origional function pointer. Safer, faster, and can share function pointer with other Objects.
  * For set, store typeinfo struct in hash table as struct which also contains sharedptr. For get, compare typeinfo before retrievings
- * Can also be implemented with size of object [slightly faster, slightl]
+ * Can also be implemented with size of object [slightly faster, slightly more flexible, less safe, less predictable]
  */
 
 /*
