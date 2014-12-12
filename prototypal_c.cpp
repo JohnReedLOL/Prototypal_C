@@ -38,7 +38,7 @@ limitations under the License.
 #include <memory> // shared_ptr, typeid
 
 #define ____OBJECT_TYPE -9223372036854775807LL
-//#define ____ACTION_TYPE -9223372036854775808LL
+#define ____ACTION_TYPE -9223372036854775808LL
 
 // Function pointer cast produces a function that takes in an arbitrary # of args and returns a void pointer.
 typedef void * (*pcast) (...);
@@ -46,10 +46,11 @@ typedef void * (*pcast) (...);
 /*
  * Dynamic object which is capable of adding static function pointers and values to itself.
  */
-class Object {
-protected:
+class Object_Prototype {
+    //protected:
+public:
     // type is stored as a 64 bit value at the head of an object
-    int64_t my_type = ____OBJECT_TYPE;
+    const int64_t my_type;
 
     struct Shared_Pointer_And_Type {
         std::shared_ptr<void> p;
@@ -71,46 +72,51 @@ protected:
         }
     };
     // contents table stores persistent variables and other objects
-    std::unordered_map<std::string, Object::Shared_Pointer_And_Type> my_contents; //When a shared_ptr is copied (or default constructed) from another the deleter is passed around, so that when you construct a shared_ptr<T> from a shared_ptr<U> the information on what destructor to call is also passed around in the deleter
+    std::unordered_map<std::string, Object_Prototype::Shared_Pointer_And_Type> my_contents; //When a shared_ptr is copied (or default constructed) from another the deleter is passed around, so that when you construct a shared_ptr<T> from a shared_ptr<U> the information on what destructor to call is also passed around in the deleter
 public:
-    // re-assignable function pointer - set with Object::setFunc and called with Object::call<Return_Type>
-    pcast fexecute_me;
+    // re-assignable function pointer - set with Object_Prototype::setFunc and called with Object_Prototype::call<Return_Type>
+    pcast execute_me;
     // re-assignable pointer to parent of this object. Function in this class will use this pointer to go up the inheritance hierarchy.
-    Object * my_parent;
+    Object_Prototype * my_parent;
     // Default constructor
 
-    Object() : my_contents(), fexecute_me(nullptr), my_parent(nullptr) {
+    Object_Prototype() : my_type(____OBJECT_TYPE), my_contents(), execute_me(nullptr), my_parent(nullptr) {
     }
 
-    Object(const Object &o) : my_contents(o.my_contents), fexecute_me(o.fexecute_me), my_parent(o.my_parent) {
+    Object_Prototype(const Object_Prototype &o) : my_type(o.my_type), my_contents(o.my_contents), execute_me(o.execute_me), my_parent(o.my_parent) {
+    }
+protected:
+
+    Object_Prototype(bool b) : my_type(____ACTION_TYPE), my_contents(), execute_me(nullptr), my_parent(nullptr) {
+    }
+public:
+
+    virtual ~Object_Prototype() {
     }
 
-    virtual ~Object() {
-    }
-
-    Object& operator =(const Object &other) {
+    Object_Prototype& operator =(const Object_Prototype &other) {
         this->my_contents = other.my_contents;
         this->my_parent = other.my_parent;
-        this->fexecute_me = other.fexecute_me;
+        this->execute_me = other.execute_me;
         return *this;
     }
 
-    void pass_contents(const Object &other) {
+    void pass_contents(const Object_Prototype &other) {
         this->my_contents = other.my_contents;
     }
 
     /*
-     * Sets function pointer fexecute_me to the address of a static function. 
+     * Sets function pointer execute_me to the address of a static function. 
      * @param function_pointer - a generic function pointer
      */
     template <class Type> void setFunc(Type function_pointer) {
         //Prevents the user from setting function pointer to an object
-        if (function_pointer == nullptr || (sizeof (function_pointer) != sizeof (this->fexecute_me))) {
+        if (function_pointer == nullptr || (sizeof (function_pointer) != sizeof (this->execute_me))) {
             std::cerr << "Function pointer is null or function cannot safely be assigned." << std::endl;
             throw std::bad_function_call();
             return;
         } else {
-            this->fexecute_me = (pcast) function_pointer;
+            this->execute_me = (pcast) function_pointer;
             return;
         }
     }
@@ -125,6 +131,12 @@ public:
         Shared_Pointer_And_Type temp(std::static_pointer_cast<void>(shared_pointer), std::type_index(typeid (value)));
         this->my_contents[name] = temp;
         return;
+    }
+
+    //alias for set
+    template <typename... Args>
+    auto add(Args&&... args) -> decltype(set(std::forward<Args>(args)...)) {
+        return set(std::forward<Args>(args)...);
     }
 
     /*
@@ -185,10 +197,10 @@ public:
                 Return_Type r = *(std::static_pointer_cast<Return_Type>(spt.p));
                 return r;
             } else {
-                std::cerr << "Type specified in get<T> function does not match the retrievable member's type." << std::endl;
+                std::cerr << "Type specified in get<Return_Type> function does not match a retrievable member's type." << std::endl;
                 throw std::bad_cast();
-                //Return_Type r;
-                //return r;
+                Return_Type r;
+                return r;
             }
         }//Else check to see if the my_parent has it
         catch (const std::out_of_range& oor) {
@@ -204,13 +216,13 @@ public:
     }
 
     /*
-     * Directly calls the generic function pointer fexecute_me if the return type is void.
+     * Directly calls the generic function pointer execute_me if the return type is void.
      * Throws bad function call if pointer is null. Will leaks memory if used with a non-void  function.
      * @param Parameters - generic list of function parameters
      */
     template <class ...A> void call(A... Parameters) {
-        if (this->fexecute_me != nullptr) {
-            (this->fexecute_me(Parameters...)); // It is NOT safe to delete a null pointer - memory will leak if the user messes up the return type
+        if (this->execute_me != nullptr) {
+            (this->execute_me(Parameters...)); // It is NOT safe to delete a null pointer - memory will leak if the user messes up the return type
             return;
         } else if (this->my_parent != nullptr) {
             this->my_parent->call(Parameters...);
@@ -223,14 +235,14 @@ public:
     }
 
     /*
-     * Directly calls the generic function pointer fexecute_me contained within this object if the return type is non-void
+     * Directly calls the generic function pointer execute_me contained within this object if the return type is non-void
      * Throws bad function call if pointer is null
      * @param Parameters - generic list of generic list of comma delimited function parameters
      * @return Return_Type - generic return type - must be specified in <>
      */
     template <class Return_Type, class ...A> Return_Type call(A... Parameters) {
-        if (this->fexecute_me != nullptr) {
-            Return_Type * rptr = (Return_Type *) (this->fexecute_me(Parameters...)); //get something allocated with new
+        if (this->execute_me != nullptr) {
+            Return_Type * rptr = (Return_Type *) (this->execute_me(Parameters...)); //get something allocated with new
             Return_Type ret = *rptr; //copy it
             delete rptr;
             return ret; //return the copy. If this thing returned a unique pointer, copying would be unnecessary.
@@ -243,30 +255,32 @@ public:
             //return r;
         }
     }
+    
+    
 
     /*
      * Executes a function with no return type by its function name 
      * @param function_name - the key name of the function as a std::string
      * @param Parameters - generic list of function parameters
      */
-    template<class ...A> void fexec(const std::string &function_name, A... Parameters) {
+    template<class ...A> void exec(const std::string &function_name, A... Parameters) {
         try {
-            Object::Shared_Pointer_And_Type spt = my_contents.at((std::string) function_name);
-            std::shared_ptr<Object> isObject = std::static_pointer_cast<Object>(spt.p);
-            if (!(isObject->my_type <= ____OBJECT_TYPE)) {
+            Object_Prototype::Shared_Pointer_And_Type spt = my_contents.at((std::string) function_name);
+            std::shared_ptr<Object_Prototype> isObject_Prototype = std::static_pointer_cast<Object_Prototype>(spt.p);
+            if ((isObject_Prototype->my_type > ____OBJECT_TYPE)) {
                 std::cerr << "Element referenced by std::string function_name cannot use an object function call." << std::endl;
                 throw std::bad_function_call();
                 return;
             }
             //Call the corresponding function in the hash table of function objects.
-            isObject->call(Parameters...);
+            isObject_Prototype->call(Parameters...);
             return;
         }//C++ map throws an exception if function not found.
         catch (const std::out_of_range& oor) {
 
             //Check my_parent.
             if (this->my_parent != nullptr) {
-                this->my_parent->fexec(function_name, Parameters...);
+                this->my_parent->exec(function_name, Parameters...);
                 return;
             }//Give up.
             else {
@@ -276,31 +290,30 @@ public:
             }
         }
     }
-
     /*
      * Executes a value-returning function by its function name 
      * @param function_name - the key name of the function as a std::string
      * @param Parameters - generic list of function parameters
      * @return Return_Type - generic return type - must be specified in <>
      */
-    template<class Return_Type, class ...A> Return_Type fexec(const std::string &function_name, A... Parameters) {
+    template<class Return_Type, class ...A> Return_Type exec(const std::string &function_name, A... Parameters) {
         try {
-            Object::Shared_Pointer_And_Type spt = my_contents.at((std::string) function_name);
-            std::shared_ptr<Object> isObject = std::static_pointer_cast<Object>(spt.p);
-            if (!(isObject->my_type == ____OBJECT_TYPE)) {
+            Object_Prototype::Shared_Pointer_And_Type spt = my_contents.at((std::string) function_name);
+            std::shared_ptr<Object_Prototype> isObject_Prototype = std::static_pointer_cast<Object_Prototype>(spt.p);
+            if ((isObject_Prototype->my_type > ____OBJECT_TYPE)) {
                 std::cerr << "Element referenced by std::string function_name cannot use an object function call." << std::endl;
                 throw std::bad_function_call();
-                Return_Type r;
-                return r;
+                //Return_Type r;
+                //return r;
             }
             //Calls the corresponding function in the hash table of function objects.
-            return isObject->call<Return_Type>(Parameters...);
+            return isObject_Prototype->call<Return_Type>(Parameters...);
         }//C++ map throws an exception if function not found.
         catch (const std::out_of_range& oor) {
             //Check my_parent.
             std::cout << "Function not found" << std::endl;
             if (this->my_parent != nullptr)
-                return this->my_parent->fexec<Return_Type>(function_name, Parameters...);
+                return this->my_parent->exec<Return_Type>(function_name, Parameters...);
                 //Give up.
             else {
                 std::cerr << "Function could not be found." << std::endl;
@@ -310,32 +323,137 @@ public:
             }
         }
     }
-    
+
+    template<class Standard_Function, class Return_Type = void, class ...A> Return_Type lexec(const std::string &function_name, A... Parameters) {
+        try {
+            Object_Prototype::Shared_Pointer_And_Type spt = my_contents.at(function_name);
+            Standard_Function isLambda = *(std::static_pointer_cast<Standard_Function>(spt.p));
+            return isLambda(Parameters...);
+        } catch (std::out_of_range e) {
+            if (this->my_parent != nullptr) {
+                return lexec<Standard_Function, Return_Type>(function_name, Parameters...);
+            } else {
+                throw e;
+            }
+
+        }
+    }
+
 };
 
 /*
  * Dynamic object which is capable of adding static function pointers and values to itself.
  */
-template <class Lambda> class Function : public Object{
-    // type is stored as a 64 bit value at the head of an object
-    //const int64_t my_type = ____OBJECT_TYPE;
+template <class Lambda> class Function : public Object_Prototype {
 public:
-    Lambda Do;
-    
+    const Lambda Do;
+
     // Default constructor
-    Function() : Object(), Do([]{}) 
-    {
-    }
-    
-    explicit Function(Lambda l) : Object(), Do(l) 
-    {
+    Function() : Object_Prototype(false), Do([] {
+    }) {
     }
 
-    Function(const Function<Lambda> &o) : Object(), Do(o.Do) 
-    {
+    explicit Function(Lambda l) : Object_Prototype(false), Do(l) {
+    }
+
+    Function(const Function<Lambda> &o) : Object_Prototype(false), Do(o.Do) {
+    }
+
+    /*
+     * Executes a value-returning function by its function name 
+     * @param function_name - the key name of the function as a std::string
+     * @param Parameters - generic list of function parameters
+     * @return Return_Type - generic return type - must be specified in <>
+     */
+    template<class New_Lambda, class Return_Type, class ...A> Return_Type fexec(const std::string &function_name, A... Parameters) {
+        Object_Prototype::Shared_Pointer_And_Type spt = my_contents.at(function_name);
+        std::shared_ptr<Function < New_Lambda>> isFunction = std::static_pointer_cast<Function < New_Lambda >> (spt.p);
+        if ((isFunction->my_type != ____ACTION_TYPE)) {
+            std::cerr << "Element referenced by std::string function_name cannot use a lambda object function call." << std::endl;
+            throw std::bad_function_call();
+            //Return_Type r;
+            //return r;
+        }
+        //Calls the corresponding function in the hash table of function objects.
+        return isFunction->Do(Parameters...);
+    }
+
+    /*
+     * Executes a value-returning function by its function name 
+     * @param function_name - the key name of the function as a std::string
+     * @param Parameters - generic list of function parameters
+     * @return Return_Type - generic return type - must be specified in <>
+     */
+    template<class New_Lambda, class ...A> void fexec(const std::string &function_name, A... Parameters) {
+        Object_Prototype::Shared_Pointer_And_Type spt = my_contents.at(function_name);
+        std::shared_ptr<Function < New_Lambda>> isFunction = std::static_pointer_cast<Function < New_Lambda >> (spt.p);
+        if ((isFunction->my_type != ____ACTION_TYPE)) {
+            std::cerr << "Element referenced by std::string function_name cannot use a lambda object function call." << std::endl;
+            throw std::bad_function_call();
+            //Return_Type r;
+            //return r;
+        }
+        //Calls the corresponding function in the hash table of function objects.
+        return isFunction->Do(Parameters...);
     }
 
     virtual ~Function() {
+    }
+};
+
+/*
+ * Dynamic object which is capable of adding static function pointers and values to itself.
+ */
+class Object : public Object_Prototype {
+public:
+
+    // Default constructor
+
+    Object() : Object_Prototype() {
+    }
+
+    Object(const Object_Prototype &o) : Object_Prototype(o) {
+    }
+
+    /*
+     * Executes a value-returning function by its function name 
+     * @param function_name - the key name of the function as a std::string
+     * @param Parameters - generic list of function parameters
+     * @return Return_Type - generic return type - must be specified in <>
+     */
+    template<class New_Lambda, class Return_Type, class ...A> Return_Type fexec(const std::string &function_name, A... Parameters) {
+        Object_Prototype::Shared_Pointer_And_Type spt = my_contents.at(function_name);
+        std::shared_ptr<Function < New_Lambda>> isFunction = std::static_pointer_cast<Function < New_Lambda >> (spt.p);
+        if ((isFunction->my_type != ____ACTION_TYPE)) {
+            std::cerr << "Element referenced by std::string function_name cannot use a lambda object function call." << std::endl;
+            throw std::bad_function_call();
+            //Return_Type r;
+            //return r;
+        }
+        //Calls the corresponding function in the hash table of function objects.
+        return isFunction->Do(Parameters...);
+    }
+
+    /*
+     * Executes a value-returning function by its function name 
+     * @param function_name - the key name of the function as a std::string
+     * @param Parameters - generic list of function parameters
+     * @return Return_Type - generic return type - must be specified in <>
+     */
+    template<class New_Lambda, class ...A> void fexec(const std::string &function_name, A... Parameters) {
+        Object_Prototype::Shared_Pointer_And_Type spt = my_contents.at(function_name);
+        std::shared_ptr<Function < New_Lambda>> isFunction = std::static_pointer_cast<Function < New_Lambda >> (spt.p);
+        if ((isFunction->my_type != ____ACTION_TYPE)) {
+            std::cerr << "Element referenced by std::string function_name cannot use a lambda object function call." << std::endl;
+            throw std::bad_function_call();
+            //Return_Type r;
+            //return r;
+        }
+        //Calls the corresponding function in the hash table of function objects.
+        return isFunction->Do(Parameters...);
+    }
+
+    virtual ~Object() {
     }
 };
 
@@ -394,21 +512,37 @@ int main() {
     Function<a_type> directCaller2(directCaller);
     directCaller2.Do();
     std::cout << "direct function call: " << ++iii << std::endl;
-    
+
+
+    // Lambdas can be used as well
     Object thingy;
     thingy.set("lala", 304);
-    auto thingy_modifier = [&thingy]() {
+    std::function<void() > thingy_modifier = [&thingy]() {
         int temp = thingy.get<int>("lala");
-        thingy.set("lala", ++temp);
+        thingy.add("lala", ++temp); //add is alias for set
         std::cout << thingy.get<int>("lala") << std::endl;
     };
-    Function<decltype(thingy_modifier)> modify(thingy_modifier);
+
+    //Functions differ from objects in that they are initialized with lambdas
+    Function < std::function<void()> > modify(thingy_modifier);
+
+    //A function's lambda can be accessed directly with "Do"
     modify.Do();
     modify.Do();
     thingy.set("modify", thingy_modifier);
-    thingy.get<decltype(thingy_modifier)>("modify")();
-    thingy.get<decltype(thingy_modifier)>("modify")();
-    
+    //thingy.get < std::function<void()> >("modify")();
+    thingy.get < std::function<void()>>("modify")();
+    thingy.add("modify", modify);
+    std::cout << "Wow" << std::endl;
+
+    // fexec can be used to call a set Do lambda. Note that fexec does not access the parent 
+    thingy.fexec < std::function<void()>>("modify");
+
+    thingy.add("1234", thingy_modifier);
+    std::cout << "test-1" << std::endl;
+    thingy.lexec < std::function<void()>>("1234");
+    std::cout << "testinf" << std::endl;
+
     //===================================================================================================================
     //Also note that for functions returning non-void, the return type must be a pointer whose contents will be allocated on heap.
     //Example:
@@ -439,10 +573,10 @@ int main() {
     //Example:
     std::cout << child.call<int>(5, 6) << std::endl; // returns 11. The dereferenced return type is specified in angle brackets.
     //===================================================================================================================
-    //Indirect function calls can also be performed. Objects which can directly call a function can be placed inside of other objects using the "object.set(std::string name, Type T)" method. An outer object can call an inner object by with the method "object.fexec<Return_Type T>(std::string name, Parameter_Pack P)". 
+    //Indirect function calls can also be performed. Objects which can directly call a function can be placed inside of other objects using the "object.set(std::string name, Type T)" method. An outer object can call an inner object by with the method "object.exec<Return_Type T>(std::string name, Parameter_Pack P)". 
     //Example:
     object.set("child", child); // add a new member child to object and set its name to "child". 
-    std::cout << object.fexec<int>("child", 5, 6) << std::endl; // tells member whose name is "child" to perform the call function. 
+    std::cout << object.exec<int>("child", 5, 6) << std::endl; // tells member whose name is "child" to perform the call function. 
     //===================================================================================================================
     //Note that "Object child" is inside of "Object object" and that "Object child" has access to "Object object". This pattern can also be applied to subclasses of Object. 
     //For Example:
@@ -456,6 +590,6 @@ int main() {
     Printer p;
     p.setFunc(ss::print);
     comp.set("print", p);
-    comp.fexec("print"); // Computer calls Printer's print function.
+    comp.exec("print"); // Computer calls Printer's print function.
     return 0;
 }
