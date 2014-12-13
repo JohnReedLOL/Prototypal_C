@@ -17,7 +17,7 @@ Prototypal_C
     std::cout << i << std::endl; //  print 5.
     
     //  The "has" function can check if an object has an element of a given type.
-    
+    //  Example:
     std::cout << object.has("x") << std::endl; // true. object has element x
     
     std::cout << object.has<int>("x") << std::endl; // true. object has element int x
@@ -103,7 +103,6 @@ Prototypal_C
 //  Members of type Object can designate a parent and pass searches for variables and function calls to their parent.
 
 //  Example:
-    
     Object child;
     
     child.setParent(object);
@@ -111,7 +110,6 @@ Prototypal_C
     std::cout << child.get<int>("x") << std::endl; //  prints 5.
     
  //Note the has function will check the parent for an element
-    
     std::cout << child.has("x") << std::endl; // true. parent has "x"
     
     std::cout << child.has<int>("x") << std::endl; // true. parent has int x.
@@ -119,7 +117,6 @@ Prototypal_C
     std::cout << child.has<float>("x") << std::endl; // false. No float x.
   
 //  Standard function lambdas can be used to call functons too:
-      
     Object thingy;
     
     thingy.set("lala", 304);
@@ -140,9 +137,7 @@ Prototypal_C
     thingy.get < std::function<void()>>("modify")(); // print 305
 
     //  The lexec function can be used to call a standard lamnda function.
-    
     //  Note that function parameters can go after the string name of the function.
-    
     thingy.lexec < std::function<void()>>("modify"); // print 306
     
 ===================================================================================================
@@ -154,7 +149,6 @@ Prototypal_C
     std::cout << "child has int x: " << child.has<int>("x") << std::endl; //True
     
     std::cout << "child has float x: " << child.has<float>("x") << std::endl; //False.
-    
     //The above line is false because child does not have float x.
     
 ===================================================================================================
@@ -162,11 +156,8 @@ Prototypal_C
   
 // Direct function calls can also be passed up to the object's parent if the function call wasn't set in the child.
 
-    std::cout << child.call<int>(5, 6) << std::endl; 
-    
-    //  returns 11. 
-    
     //The dereferenced return type is specified in angle brackets.
+    std::cout << child.call<int>(5, 6) << std::endl; //  returns 11. 
     
     //  Note: The lexec function also passes up to the caller's parent. 
     //  Example:
@@ -181,11 +172,9 @@ Prototypal_C
 //Indirect function calls can also be performed. Objects which can directly call a function can be placed inside of other objects using the "object.set(std::string name, Type T)" method. An outer object can call an inner object by with the method "object.Do<Return_Type T>(std::string name, Parameter_Pack P)". 
 
     //  add a new member child to object and set its name to "child".
-    
     object.set("child", child);
     
     //  tells member whose name is "child" to perform the call function.
-    
     std::cout << object.exec<int>("child", 5, 6) << std::endl;
   
  
