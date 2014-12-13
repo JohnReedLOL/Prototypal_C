@@ -99,11 +99,12 @@ Prototypal_C
     thingy.set("modify", thingy_modifier);
     thingy.get < std::function<void()>>("modify")(); // print 305
 
- //  The lexec function can be used to call a standard lamnda function.
- //  Note that function parameters can go after the string name of the function.
+ //  The above line retrieves a copy of the std::function pointer corresponding to "modify" and allows you to dereference the pointer by adding parenthesis. The lexec [lambda_execute] function [below] is different from getting the lambda and calling it because the lexec function will call the lambda and then return whatever the lambda returns. lexec will run faster than get if the std::function is significantly larger than its return type.
+ 
+ Example:
  
     thingy.lexec < std::function<void()>>("modify"); // print 306
-    
+    // Since void has a smaller size than the std::function, lexec runs slightly faster.
 ===================================================================================================
 
 // The "has" function can be used to check if an object or its parent has an element
@@ -121,7 +122,7 @@ Prototypal_C
     //The dereferenced return type is specified in angle brackets.
     std::cout << child.call<int>(5, 6) << std::endl; //  returns 11. 
     
- //  Note: The lexec [lambda exec] function can also pass calls up to the object's parent. 
+ //  Note: The lexec function can also pass calls up to the object's parent. 
  
  //  Example:
  
