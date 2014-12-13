@@ -5,15 +5,10 @@ Prototypal_C
 
     #include "Prototypal_Cpp.h"
     int main() {
-    
     Object object;
-    
     int x = 5;
-    
     object.set("x", x); //  add a new member x to object and set its name to "x".
-    
     int i = object.get<int>("x"); //  get member of type int whose name is "x".
-    
     std::cout << i << std::endl; //  print 5.
     
  // A "has" function can check if an object has an element of a given type.
@@ -21,9 +16,7 @@ Prototypal_C
  // Example:
    
     std::cout << object.has("x") << std::endl; // true. object has element x
-    
     std::cout << object.has<int>("x") << std::endl; // true. object has element int x
-    
     std::cout << object.has<float>("x") << std::endl; // false. No float x
   
  
@@ -34,18 +27,12 @@ Prototypal_C
 
     struct ss
     {
-    
         static void print()
         {
-        
             std::cout << "hello world" << std::endl;
-            
         }
-        
     };
-    
     object.setFunc(ss::print); //  sets object's function pointer to print.
-    
     object.call(); //  directly calls the print function.
   
  
@@ -54,25 +41,16 @@ Prototypal_C
   
 //Note that only static global functions, non-static global functions, and non-static class member functions can be passed using setFunc() and call(). Member functions setFunc() and call() can also be used to pass parameters of primitive types or pointers to class types. 
 
-
     struct vv
     {
-
         static void func(Object * o, int x)
         {
-        
             ++x;
-            
             o->set("new_x", x);
-            
         }
-        
     };
-    
     object.setFunc(vv::func); //  sets object's function pointer to func.
-    
     Object * ob = &object;
-    
     object.call(ob, x); //  directly calls the func function.
     
 ===================================================================================================
@@ -82,23 +60,15 @@ Prototypal_C
 
     struct ww
     {
-
         static int * add(int x, int y)
         {
-        
             return new int(x + y);
-            
         }
-        
     };
-    
     object.setFunc(ww::add); //  sets object's function pointer to add.
-    
     x = object.call<int>(5, 6); //  returns int 11.
-    
     std::cout << x << std::endl;
     
-  
 ===================================================================================================
 
   
@@ -106,16 +76,13 @@ Prototypal_C
 
 //  Example:
     Object child;
-    
     child.setParent(object);
-    
     std::cout << child.get<int>("x") << std::endl; //  prints 5.
     
  //Note the has function will check the parent for an element
+ 
     std::cout << child.has("x") << std::endl; // true. parent has "x"
-    
     std::cout << child.has<int>("x") << std::endl; // true. parent has int x.
-    
     std::cout << child.has<float>("x") << std::endl; // false. No float x.
   
 //  Standard function lambdas can be used to call functons too:
