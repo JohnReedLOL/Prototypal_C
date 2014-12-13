@@ -1,9 +1,9 @@
 Prototypal_C
 ============
 
- Prototypal_C.h is a header implementing a class that allows users to write dynamic, type-safe, prototypal inheritance based c++ code. The Object class contained within this header can be instantiated to create generic containers capable of augmenting themselves with members and functions of various types. Members are accessed indirectly by passing a string to a "get" function. For example: 
+ Prototypal_Cpp.h is a c++ header that allows users to write dynamic, type-safe, prototypal inheritance based c++ code. The Object class contained within this header can be instantiated to create generic containers capable of augmenting themselves with members and functions of various types. Members are accessed indirectly by passing a string to a "get" function. For example: 
 
-    #include "prototypal_cpp.h"
+    #include "Prototypal_Cpp.h"
     ...
     
     Object object;
