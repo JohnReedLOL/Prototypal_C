@@ -68,7 +68,45 @@ Prototypal_C
   
   std::cout << object.get<int>("x") << std::endl;           // gets the member of type int whose name is "x" from object. prints 5.
   
- 
+//  Standard function lambdas can be used to call functons too:
+      
+    Object thingy;
+    
+    thingy.set("lala", 304);
+    
+    std::function<void() > thingy_modifier = [&thingy]()
+    {
+    
+        int temp = thingy.get<int>("lala");
+        
+        thingy.add("lala", ++temp); // add is alias for set
+        
+        std::cout << thingy.get<int>("lala") << std::endl;
+        
+    };
+    
+    thingy.set("modify", thingy_modifier);
+    
+    thingy.get < std::function<void()>>("modify")(); // print 305
+
+    //  The lexec function can be used to call a standard lamnda function.
+    
+    //  Note that function parameters can go after the string name of the function.
+    
+    thingy.lexec < std::function<void()>>("modify"); // print 306
+    
+===================================================================================================
+
+// The "has" function can be used to check if an object or its parent has an element
+
+    std::cout << child.has("x") << std::endl; // Tyue
+    
+    std::cout << "child has int x: " << child.has<int>("x") << std::endl; //True
+    
+    std::cout << "child has float x: " << child.has<float>("x") << std::endl; //False.
+    
+    //The above line is false because child does not have float x.
+    
 ===================================================================================================
 
   
