@@ -161,8 +161,10 @@ Prototypal_C
     //The dereferenced return type is specified in angle brackets.
     std::cout << child.call<int>(5, 6) << std::endl; //  returns 11. 
     
-    //  Note: The lexec function also passes up to the caller's parent. 
-    //  Example:
+ //  Note: The lexec [lambda exec] function can also pass calls up to the object's parent. 
+ 
+ //  Example:
+ 
     child.setParent(thingy);
     
     child.lexec < std::function<void()>>("modify"); // prints 307.
