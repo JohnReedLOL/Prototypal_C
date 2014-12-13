@@ -97,15 +97,21 @@ Prototypal_C
 ===================================================================================================
 
   
-//Members of type Object can designate a parent and pass searches for variables and function calls to their parent. For example:
+//  Members of type Object can designate a parent and pass searches for variables and function calls to their parent.
 
-  Object child;
-  
-  child.my_parent = &object;
-  
-  object.my_parent = nullptr;
-  
-  std::cout << object.get<int>("x") << std::endl;           // gets the member of type int whose name is "x" from object. prints 5.
+//  Example:
+    
+    Object child;
+    
+    child.setParent(object);
+    
+    std::cout << child.get<int>("x") << std::endl; //  prints 5.
+    
+    std::cout << "child has \"x\": " << child.has("x") << std::endl;
+    
+    std::cout << "child has int x: " << child.has<int>("x") << std::endl;
+    
+    std::cout << "child has float x: " << child.has<float>("x") << std::endl;
   
 //  Standard function lambdas can be used to call functons too:
       
