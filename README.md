@@ -16,8 +16,9 @@ Prototypal_C
     
     std::cout << i << std::endl; //  print 5.
     
-    //  The "has" function can check if an object has an element of a given type.
-    //  Example:
+   The "has" function can check if an object has an element of a given type.
+   Example:
+   
     std::cout << object.has("x") << std::endl; // true. object has element x
     
     std::cout << object.has<int>("x") << std::endl; // true. object has element int x
