@@ -75,6 +75,7 @@ Prototypal_C
 //  Members of type Object can designate a parent and pass searches for variables and function calls to their parent.
 
 //  Example:
+
     Object child;
     child.setParent(object);
     std::cout << child.get<int>("x") << std::endl; //  prints 5.
@@ -86,27 +87,21 @@ Prototypal_C
     std::cout << child.has<float>("x") << std::endl; // false. No float x.
   
 //  Standard function lambdas can be used to call functons too:
+
     Object thingy;
-    
     thingy.set("lala", 304);
-    
     std::function<void() > thingy_modifier = [&thingy]()
     {
-    
         int temp = thingy.get<int>("lala");
-        
         thingy.add("lala", ++temp); // add is alias for set
-        
         std::cout << thingy.get<int>("lala") << std::endl;
-        
     };
-    
     thingy.set("modify", thingy_modifier);
-    
     thingy.get < std::function<void()>>("modify")(); // print 305
 
-    //  The lexec function can be used to call a standard lamnda function.
-    //  Note that function parameters can go after the string name of the function.
+ //  The lexec function can be used to call a standard lamnda function.
+ //  Note that function parameters can go after the string name of the function.
+ 
     thingy.lexec < std::function<void()>>("modify"); // print 306
     
 ===================================================================================================
@@ -114,9 +109,7 @@ Prototypal_C
 // The "has" function can be used to check if an object or its parent has an element
 
     std::cout << child.has("x") << std::endl; // Tyue
-    
     std::cout << "child has int x: " << child.has<int>("x") << std::endl; //True
-    
     std::cout << "child has float x: " << child.has<float>("x") << std::endl; //False.
     //The above line is false because child does not have float x.
     
@@ -133,9 +126,7 @@ Prototypal_C
  //  Example:
  
     child.setParent(thingy);
-    
     child.lexec < std::function<void()>>("modify"); // prints 307.
-    
     child.setParent(object);
 ===================================================================================================
 
@@ -157,23 +148,15 @@ Prototypal_C
     class Computer : public Object
     {
     };
-
     class Printer : public Object
     {
     };
-    
     Computer comp;
-    
     Printer p;
-    
     p.setFunc(ss::print);
-    
     comp.set("print", p);
-    
     comp.exec("print"); //  Computer calls Printer's print function.
-    
     return 0;
-    
     }
  
 ===================================================================================================
