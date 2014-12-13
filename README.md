@@ -1,7 +1,7 @@
 Prototypal_C
 ============
 
- Prototypal_Cpp.h is a c++ header that allows users to write dynamic, type-safe, prototypal inheritance based c++ code. The Object class contained within this header can be instantiated to create generic containers capable of augmenting themselves with members and functions of various types. Members are accessed indirectly by passing a string to a "get" function. For example: 
+ // Prototypal_Cpp.h is a c++ header that allows users to write dynamic, type-safe, prototypal inheritance based c++ code. The Object class contained within this header can be instantiated to create generic containers capable of augmenting themselves with members and functions of various types. Members are accessed indirectly by passing a string to a "get" function. For example: 
 
     #include "Prototypal_Cpp.h"
     int main() {
@@ -16,9 +16,9 @@ Prototypal_C
     
     std::cout << i << std::endl; //  print 5.
     
- A "has" function can check if an object has an element of a given type.
+ // A "has" function can check if an object has an element of a given type.
  
- Example:
+ // Example:
    
     std::cout << object.has("x") << std::endl; // true. object has element x
     
