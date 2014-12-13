@@ -24,7 +24,7 @@ limitations under the License.
 #include <typeindex>      //  std::type_index
 #include <stdio.h>        //  printf
 #include <unordered_map>
-#include <functional>     // std::bad_function_call
+#include <functional>     //  std::bad_function_call
 #include <memory>         //  shared_ptr, typeid
 
 /** type pcast produces a function that takes in an arbitrary # of args and
