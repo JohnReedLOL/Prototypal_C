@@ -168,6 +168,14 @@ Prototypal_C
     
     //The dereferenced return type is specified in angle brackets.
     
+    //  Note: The lexec function also passes up to the caller's parent. 
+    //  Example:
+    
+    child.setParent(thingy);
+    
+    child.lexec < std::function<void()>>("modify"); // prints 307.
+    
+    child.setParent(object);
 ===================================================================================================
 
   
