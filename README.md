@@ -202,6 +202,8 @@ Prototypal_C
     comp.set("print", p);
     
     comp.exec("print"); //  Computer calls Printer's print function.
+    
+    return 0;
   
  
 ===================================================================================================
