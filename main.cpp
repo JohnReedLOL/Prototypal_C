@@ -1,3 +1,16 @@
+/*
+Copyright [2014] [John-Michael Reed]
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http:  // www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+ */
+
 /* 
  * File:   main.cpp
  * Author: John-Michael_Reed
@@ -32,8 +45,7 @@ int main()
      */
     // Example:
 
-    struct ss
-    {
+    struct ss {
 
         static void print()
         {
@@ -50,8 +62,7 @@ int main()
      */
     //  Example:
 
-    struct vv
-    {
+    struct vv {
 
         static void func(Object * o, int x)
         {
@@ -84,8 +95,7 @@ int main()
     //  a pointer whose contents will be allocated on heap.
     //  Example:
 
-    struct ww
-    {
+    struct ww {
 
         static int * add(int x, int y)
         {
@@ -114,12 +124,12 @@ int main()
     //  Example:
     std::cout << child.call<int>(5, 6) << std::endl; //  returns 11. The 
     //  dereferenced return type is specified in angle brackets.
-    
+
     //  lexec function also passes up to parent. 
     child.setParent(thingy);
     child.lexec < std::function<void()>>("modify"); // prints 307.
     child.setParent(object);
-    
+
     // ===================================================
 
     //  Indirect function calls can also be performed. Objects which can directly 
@@ -141,12 +151,10 @@ int main()
     //  This pattern can also be applied to subclasses of Object. 
     //  For Example:
 
-    class Computer : public Object
-    {
+    class Computer : public Object {
     };
 
-    class Printer : public Object
-    {
+    class Printer : public Object {
     };
     Computer comp;
     Printer p;
