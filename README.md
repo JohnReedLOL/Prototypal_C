@@ -110,11 +110,13 @@ Prototypal_C
     
     std::cout << child.get<int>("x") << std::endl; //  prints 5.
     
-    std::cout << "child has \"x\": " << child.has("x") << std::endl;
+ //Note the has function will check the parent for an element
     
-    std::cout << "child has int x: " << child.has<int>("x") << std::endl;
+    std::cout << child.has("x") << std::endl; // true. parent has "x"
     
-    std::cout << "child has float x: " << child.has<float>("x") << std::endl;
+    std::cout << child.has<int>("x") << std::endl; // true. parent has int x.
+    
+    std::cout << child.has<float>("x") << std::endl; // false. No float x.
   
 //  Standard function lambdas can be used to call functons too:
       
