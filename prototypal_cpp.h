@@ -116,7 +116,8 @@ public:
     {
     }
 
-    /** Sets the parent of this Object to another Object
+    /** 
+     *  \brief Sets the parent of this Object to another Object
      *  @param other_object - new parent
      */
     inline void setParent(Object &other_object)
@@ -144,15 +145,15 @@ public:
     }
 
     /** 
-     *  Passes hashtable contents from one Object to another
+     *  \brief Passes hashtable contents from one Object to another
      */
     inline void pass_contents(const Object &other)
     {
         this->my_contents = other.my_contents;
     }
 
-    /*
-     * Sets function pointer execute_me to the address of a static function. 
+    /**
+     * \brief Sets function pointer execute_me to the address of a static function. 
      * @param function_pointer - a generic 64-bit function pointer
      */
     template <class Type> void setFunc(Type function_pointer)
@@ -175,7 +176,7 @@ public:
     }
 
     /**
-     * Add a single object property to the properties hash table with key 
+     * \brief Add a single object property to the properties hash table with key 
      * string::name and generic value. 
      * Will leak memory if you pass in new int[] allocate array.
      * @param name - name that will be used to retrieve value
@@ -200,8 +201,8 @@ public:
         return set(std::forward<Args>(args)...);
     }
 
-    /*
-     * Checks to see if this object has a variable with name value equal to 
+    /**
+     * \brief Checks to see if this object has a variable with name value equal to 
      * std::string name.
      * Throws out_of_range exception when name cannot be found
      * @param name - name of the variable that we are searching for
@@ -228,8 +229,8 @@ public:
         }
     }
 
-    /*
-     * Checks to see if this object has a variable with name value equal to 
+    /**
+     * \brief Checks to see if this object has a variable with name value equal to 
      * std::string name and type equal to Element_Type.
      * Throws out_of_range exception when name cannot be found
      * @param name - name of the variable that we are searching for
@@ -263,8 +264,8 @@ public:
         }
     }
 
-    /*
-     * Retrieves an element from this object with non-void return type
+    /**
+     * \brief Retrieves an element from this object with non-void return type
      * Throws out_of_range exception when name cannot be found
      * @param name - string name of the variable that we are searching for
      * @return Return_Type - return type which must be specified in 
@@ -307,8 +308,8 @@ public:
         }
     }
 
-    /*
-     * Directly calls the generic function pointer execute_me if the return 
+    /**
+     * \brief Directly calls the generic function pointer execute_me if the return 
      * type is void.
      * Throws bad function call if pointer is null. Will leaks memory if used 
      * with a non-void  function.
@@ -335,8 +336,8 @@ public:
         }
     }
 
-    /*
-     * Directly calls the generic function pointer execute_me contained within 
+    /**
+     * \brief Directly calls the generic function pointer execute_me contained within 
      * this object if the return type is non-void
      * Throws bad function call if pointer is null
      * @param Parameters - generic list of generic list of comma delimited 
@@ -366,8 +367,8 @@ public:
         }
     }
 
-    /*
-     * Executes a function with no return type by its function name 
+    /**
+     * \brief Executes a function with no return type by its function name 
      * @param function_name - the key name of the function as a std::string
      * @param Parameters - generic list of function parameters
      */
@@ -410,8 +411,8 @@ public:
         }
     }
 
-    /*
-     * Executes a value-returning function by its function name 
+    /**
+     * \brief Executes a value-returning function by its function name 
      * @param function_name - the key name of the function as a std::string
      * @param Parameters - generic list of function parameters
      * @return Return_Type - generic return type - must be specified in <>
@@ -452,8 +453,8 @@ public:
         }
     }
 
-    /*
-     * Executes a standard function by name 
+    /**
+     * \brief Executes a standard function by name. Returns whatever the function returns. 
      * @param function_name - the key name of the standard function as a 
      * std::string
      * @param Parameters - generic list of function parameters
