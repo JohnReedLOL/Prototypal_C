@@ -170,7 +170,6 @@ Prototypal_C
     
     //  Note: The lexec function also passes up to the caller's parent. 
     //  Example:
-    
     child.setParent(thingy);
     
     child.lexec < std::function<void()>>("modify"); // prints 307.
