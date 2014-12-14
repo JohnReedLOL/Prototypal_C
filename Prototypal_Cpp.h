@@ -190,7 +190,7 @@ public:
      * object somewhere in its parent tree.
      */
     bool has(const std::string &name) {
-        if (this->my_contents.count(name)) {
+        if (hasOwnProperty(name)) {
             return true;
         }// Else check to see if the my_parent has it
         else {
@@ -211,9 +211,9 @@ public:
      * object somewhere in its parent tree.
      */
     bool hasOwnProperty(const std::string &name) {
-        return (bool)this->my_contents.count(name);
+        return this->my_contents.count(name);
     }
-
+ 
     /**
      * \brief Constant time alternative to hasOwnProperty
      * @param name - name of the variable that we are searching for
@@ -228,7 +228,22 @@ public:
             return true;
         }
     }
-
+     /**
+     * \brief Supposedly slow version of hasOwnProperty
+     * @param name - name of the variable that we are searching for
+     * @return true if element of name name can be found in this object or an 
+     * object somewhere in its parent tree.
+     */
+    bool hasOwnProperty3(const std::string &name) {
+        try {
+            this->my_contents.at(name); 
+            return true;
+        }
+        catch(std::out_of_range o) {
+            return false;
+        }
+    }
+ public:
     /**
      * \brief Checks to see if this object or its parent
      * has a variable with name value equal to 
@@ -242,7 +257,7 @@ public:
         auto spt = this->my_contents.find(name);
         if (spt == this->my_contents.end()) {
             if (this->my_parent != nullptr)
-                return this->my_parent->hasOwnProperty<Element_Type>(name);
+                return this->my_parent->has<Element_Type>(name);
             else
                 return false;
         } else {

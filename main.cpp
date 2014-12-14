@@ -45,6 +45,7 @@ int main()
     std::cout << "object has \"x\": " << object.has("x") << std::endl;
     std::cout << "object has own \"x\": " << object.hasOwnProperty("x") << std::endl;
     std::cout << "object has own2 \"x\": " << object.hasOwnProperty2("x") << std::endl;
+    std::cout << "object has own3 \"x\": " << object.hasOwnProperty3("x") << std::endl;
     std::cout << "object has int x: " << object.has<int>("x") << std::endl;
     std::cout << "object has own int \"x\": " << object.hasOwnProperty<int>("x") << std::endl;
     std::cout << "object has float x: " << object.has<float>("x") << std::endl;
