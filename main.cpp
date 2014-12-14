@@ -44,8 +44,6 @@ int main()
     std::cout << i << std::endl; //  print 5.
     std::cout << "object has \"x\": " << object.has("x") << std::endl;
     std::cout << "object has own \"x\": " << object.hasOwnProperty("x") << std::endl;
-    std::cout << "object has own2 \"x\": " << object.hasOwnProperty2("x") << std::endl;
-    std::cout << "object has own3 \"x\": " << object.hasOwnProperty3("x") << std::endl;
     std::cout << "object has int x: " << object.has<int>("x") << std::endl;
     std::cout << "object has own int \"x\": " << object.hasOwnProperty<int>("x") << std::endl;
     std::cout << "object has float x: " << object.has<float>("x") << std::endl;
@@ -128,7 +126,6 @@ int main()
     std::cout << child.get<int>("x") << std::endl; //  prints 5.
     std::cout << "child has \"x\": " << child.has("x") << std::endl;
     std::cout << "child has own \"x\": " << child.hasOwnProperty("x") << std::endl;
-    std::cout << "child has own2 \"x\": " << child.hasOwnProperty2("x") << std::endl;
     std::cout << "child has int x: " << child.has<int>("x") << std::endl;
     std::cout << "child has own int \"x\": " << child.hasOwnProperty<int>("x") << std::endl;
     std::cout << "child has float x: " << child.has<float>("x") << std::endl;

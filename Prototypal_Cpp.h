@@ -213,37 +213,6 @@ public:
     bool hasOwnProperty(const std::string &name) {
         return this->my_contents.count(name);
     }
- 
-    /**
-     * \brief Constant time alternative to hasOwnProperty
-     * @param name - name of the variable that we are searching for
-     * @return true if element of name name can be found in this object or an 
-     * object somewhere in its parent tree.
-     */
-    bool hasOwnProperty2(const std::string &name) {
-        auto spt = this->my_contents.find(name);
-        if (spt == this->my_contents.end()) {
-            return false;
-        } else {
-            return true;
-        }
-    }
-     /**
-     * \brief Supposedly slow version of hasOwnProperty
-     * @param name - name of the variable that we are searching for
-     * @return true if element of name name can be found in this object or an 
-     * object somewhere in its parent tree.
-     */
-    bool hasOwnProperty3(const std::string &name) {
-        try {
-            this->my_contents.at(name); 
-            return true;
-        }
-        catch(std::out_of_range o) {
-            return false;
-        }
-    }
- public:
     /**
      * \brief Checks to see if this object or its parent
      * has a variable with name value equal to 
@@ -275,14 +244,6 @@ public:
      * @return true if element of name name can be found in this object or an 
      * object somewhere in its parent tree.
      */
-
-    /*std::unordered_map<std::string, double>::const_iterator got = mymap.find(input);
-
-    if (got == mymap.end())
-        std::cout << "not found";
-    else
-        std::cout << got->first << " is " << got->second;*/
-
     template <class Element_Type> bool hasOwnProperty(const std::string &name) {
         auto spt = this->my_contents.find(name);
         if (spt == this->my_contents.end()) {
@@ -297,7 +258,7 @@ public:
 
     /**
      * \brief Retrieves an element from this object with non-void return type
-     * Throws out_of_range exception when name cannot be found
+     * Throws -1 when name cannot be found
      * @param name - string name of the variable that we are searching for
      * @return Return_Type - return type which must be specified in 
      * angle brackets
