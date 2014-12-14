@@ -35,7 +35,9 @@ int main()
     object.set("x", x); //  add a new member x to object and set its name to "x".
     int i = object.get<int>("x"); //  get member of type int whose name is "x".
     
-    try {object.get<int>("non-existant variable");} 
+    try {
+        object.get<int>("non-existant variable");
+    } 
     catch(int){}
     
     try {object.get<float>("x");}

@@ -145,15 +145,15 @@ public:
      */
     template <class Type> void setFunc(Type function_pointer) {
         // Prevents the user from setting function pointer to an object
-        if (function_pointer == nullptr || (sizeof (function_pointer) !=
+        if (function_pointer != nullptr && (sizeof (function_pointer) ==
                 sizeof (this->execute_me))) {
+            this->execute_me = (pcast) function_pointer;
+            return;
+        } else {
             printf("In Object.setFunc, function pointer is null or function "
                     "cannot safely be assigned.\n  "
                     "See line number %d in file %s\n\n", __LINE__, __FILE__);
             //throw std::bad_function_call();
-            return;
-        } else {
-            this->execute_me = (pcast) function_pointer;
             return;
         }
     }
@@ -213,6 +213,7 @@ public:
     bool hasOwnProperty(const std::string &name) {
         return this->my_contents.count(name);
     }
+
     /**
      * \brief Checks to see if this object or its parent
      * has a variable with name value equal to 
@@ -224,18 +225,19 @@ public:
      */
     template <class Element_Type> bool has(const std::string &name) {
         auto spt = this->my_contents.find(name);
-        if (spt == this->my_contents.end()) {
-            if (this->my_parent != nullptr)
-                return this->my_parent->has<Element_Type>(name);
-            else
-                return false;
-        } else {
+        if (spt != this->my_contents.end()) {
             if (spt->second.t == std::type_index(typeid (Element_Type)))
                 return true;
             else
                 return false;
+        } else {
+            if (this->my_parent != nullptr)
+                return this->my_parent->has<Element_Type>(name);
+            else
+                return false;
         }
     }
+
     /**
      * \brief Checks to see if this object has a variable with name value equal to 
      * std::string name and type equal to Element_Type.
@@ -246,13 +248,11 @@ public:
      */
     template <class Element_Type> bool hasOwnProperty(const std::string &name) {
         auto spt = this->my_contents.find(name);
-        if (spt == this->my_contents.end()) {
-            return false;
+        if ((spt != this->my_contents.end()) &&
+                (spt->second.t == std::type_index(typeid (Element_Type)))) {
+            return true;
         } else {
-            if (spt->second.t == std::type_index(typeid (Element_Type)))
-                return true;
-            else
-                return false;
+            return false;
         }
     }
 
@@ -276,7 +276,6 @@ public:
                         "does not match up with a retrievable member's type.\n"
                         "  See line number %d in file %s\n\n",
                         name.c_str(), __LINE__, __FILE__);
-                //throw std::bad_cast();
                 throw -1;
             }
         }// Else check to see if the my_parent has it
@@ -288,7 +287,6 @@ public:
                         "parameter \"%s\" does not correspond to a named "
                         "element.\n  See line number %d in file %s\n\n",
                         name.c_str(), name.c_str(), __LINE__, __FILE__);
-                //throw oor;
                 throw -1;
             }
         }
@@ -311,7 +309,6 @@ public:
         } else {
             printf("In Object.call, function pointer passed to call is nullptr"
                     ".\n  See line number %d in file %s\n\n", __LINE__, __FILE__);
-            //throw std::bad_function_call();
             throw -1; //dereferencing a null pointer is a serious problem.
             return;
         }
@@ -338,7 +335,6 @@ public:
             printf("In Object.call<class Return_Type>, function pointer passed"
                     " to call is nullptr.\n  See line number %d in file %s\n\n",
                     __LINE__, __FILE__);
-            //throw std::bad_function_call();
             throw -1;
         }
     }
@@ -355,17 +351,19 @@ public:
                     my_contents.at((std::string) function_name);
             std::shared_ptr<Object> isObject = std::static_pointer_cast<Object>
                     (spt.p);
-            if (isObject->my_type != ____OBJECT_TYPE) {
+            if (isObject->my_type == ____OBJECT_TYPE) {
+                // Call the corresponding function
+                isObject->call(Parameters...);
+                return;
+
+            } else {
                 printf("Object.exec(\"%s\") does not "
                         "reference a callable Object.\n "
                         " See line number %d in file %s\n\n",
                         function_name.c_str(), __LINE__, __FILE__);
-                //throw std::bad_function_call();
+                throw -1;
                 return;
             }
-            // Call the corresponding function
-            isObject->call(Parameters...);
-            return;
         }// C++ map throws an exception if function not found.
         else {
             // Check my_parent.
@@ -378,7 +376,7 @@ public:
                         "Object.exec cannot be found.\n  "
                         "See line number %d in file %s\n\n",
                         function_name.c_str(), __LINE__, __FILE__);
-                //throw oor;
+                throw -1;
                 return;
             }
         }
@@ -397,16 +395,17 @@ public:
                     my_contents.at((std::string) function_name);
             std::shared_ptr<Object> isObject = std::static_pointer_cast<Object>
                     (spt.p);
-            if (isObject->my_type != ____OBJECT_TYPE) {
+            if (isObject->my_type == ____OBJECT_TYPE) {
+                //  Calls the corresponding function.
+                return isObject->call<Return_Type>(Parameters...);
+            } else {
                 printf("Object.exec<class Return_Type>(\"%s\") does not "
                         "reference a callable Object.\n "
                         " See line number %d in file %s\n\n",
                         function_name.c_str(), __LINE__, __FILE__);
-                //throw std::bad_function_call();
                 throw -1;
             }
-            //  Calls the corresponding function.
-            return isObject->call<Return_Type>(Parameters...);
+
         }//  C++ map throws an exception if function not found.
         else {
             // Check my_parent.
@@ -438,17 +437,17 @@ public:
     Return_Type lexec(const std::string &function_name, A... Parameters) {
         if (this->hasOwnProperty(function_name)) {
             Object::Shared_Pointer_And_Type spt = my_contents.at(function_name);
-            if (std::type_index(typeid (Standard_Function)) != spt.t) {
+            if (std::type_index(typeid (Standard_Function)) == spt.t) {
+                Standard_Function isLambda =
+                        *(std::static_pointer_cast<Standard_Function>(spt.p));
+                return isLambda(Parameters...);
+            } else {
                 printf("Wrong standard function class referenced by "
                         "Object.levec<class Standard_Function>(\"%s\").\n  "
                         "See line number %d in file %s\n\n",
                         function_name.c_str(), __LINE__, __FILE__);
-                //throw std::bad_function_call();
                 throw -1;
             }
-            Standard_Function isLambda =
-                    *(std::static_pointer_cast<Standard_Function>(spt.p));
-            return isLambda(Parameters...);
         } else {
             if (this->my_parent != nullptr) {
                 return this->my_parent->lexec<Standard_Function, Return_Type>
@@ -458,7 +457,6 @@ public:
                         "could not be found."
                         "\n  See line number %d in file %s\n\n",
                         function_name.c_str(), __LINE__, __FILE__);
-                //throw e;
                 throw -1;
             }
         }
