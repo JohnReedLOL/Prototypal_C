@@ -166,9 +166,10 @@ class Object {
         return set(std::forward<Args>(args)...);
     }
     /**
-     * \brief Checks to see if this object has a variable with name value equal to 
+     * \brief Checks to see if this object or its parent
+     * has a variable with name value equal to 
      * std::string name.
-     * Throws out_of_range exception when name cannot be found
+     * returns false when name cannot be found
      * @param name - name of the variable that we are searching for
      * @return true if element of name name can be found in this object or an 
      * object somewhere in its parent tree.
@@ -188,8 +189,26 @@ class Object {
     }
     /**
      * \brief Checks to see if this object has a variable with name value equal to 
+     * std::string name.
+     * returns false when name cannot be found in this object
+     * @param name - name of the variable that we are searching for
+     * @return true if element of name name can be found in this object or an 
+     * object somewhere in its parent tree.
+     */
+    bool hasOwnProperty(const std::string &name) {
+        try {   // If the element exists, get it.
+            ((this->my_contents.at(name)));
+            return true;
+        }  // Else check to see if the my_parent has it
+        catch (const std::out_of_range& oor) {
+                return false;
+        }
+    }
+    /**
+     * \brief Checks to see if this object or its parent
+     * has a variable with name value equal to 
      * std::string name and type equal to Element_Type.
-     * Throws out_of_range exception when name cannot be found
+     * returns false when name cannot be found
      * @param name - name of the variable that we are searching for
      * @return true if element of name name can be found in this object or an 
      * object somewhere in its parent tree.
@@ -209,6 +228,27 @@ class Object {
             } else {
                 return false;
             }
+        }
+    }
+        /**
+     * \brief Checks to see if this object has a variable with name value equal to 
+     * std::string name and type equal to Element_Type.
+     * returns false when name cannot be found in this object
+     * @param name - name of the variable that we are searching for
+     * @return true if element of name name can be found in this object or an 
+     * object somewhere in its parent tree.
+     */
+    template <class Element_Type> bool hasOwnProperty(const std::string &name) {
+        try {   // If the element exists, get it.
+            Shared_Pointer_And_Type spt = this->my_contents.at(name);
+            if (spt.t == std::type_index(typeid (Element_Type))) {
+                return true;
+            } else {
+                return false;
+            }
+        }  // Else check to see if the my_parent has it
+        catch (const std::out_of_range& oor) {
+                return false;
         }
     }
     /**
