@@ -43,8 +43,12 @@ int main()
     
     std::cout << i << std::endl; //  print 5.
     std::cout << "object has \"x\": " << object.has("x") << std::endl;
+    std::cout << "object has own \"x\": " << object.hasOwnProperty("x") << std::endl;
+    std::cout << "object has own2 \"x\": " << object.hasOwnProperty2("x") << std::endl;
     std::cout << "object has int x: " << object.has<int>("x") << std::endl;
+    std::cout << "object has own int \"x\": " << object.hasOwnProperty<int>("x") << std::endl;
     std::cout << "object has float x: " << object.has<float>("x") << std::endl;
+    std::cout << "object has own float \"x\": " << object.hasOwnProperty<float>("x") << std::endl;
     // =========================================================
     /* One member function can be called directly using the "call" method, which 
      * avoids the overhead of object storage and retrieval. This feature allows 
@@ -122,8 +126,12 @@ int main()
     child.setParent(object);
     std::cout << child.get<int>("x") << std::endl; //  prints 5.
     std::cout << "child has \"x\": " << child.has("x") << std::endl;
+    std::cout << "child has own \"x\": " << child.hasOwnProperty("x") << std::endl;
+    std::cout << "child has own2 \"x\": " << child.hasOwnProperty2("x") << std::endl;
     std::cout << "child has int x: " << child.has<int>("x") << std::endl;
+    std::cout << "child has own int \"x\": " << child.hasOwnProperty<int>("x") << std::endl;
     std::cout << "child has float x: " << child.has<float>("x") << std::endl;
+    std::cout << "child has own float \"x\": " << child.hasOwnProperty<float>("x") << std::endl;
     // ===================================================
 
     //  Direct function calls can also be designated to object parent if they are 

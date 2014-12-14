@@ -36,6 +36,7 @@ typedef void * (*pcast) (...);
  * \brief Magic number used for type identification 
  */
 #define ____OBJECT_TYPE 9223372036854775807LL
+
 /**  \brief Dynamic object which is capable of adding static function pointers, 
  *  std::function lambads, and values to itself
  */
@@ -44,20 +45,25 @@ class Object {
      *  \brief Magic number used for type identification 
      */
     const int64_t my_type = ____OBJECT_TYPE;
+
     /**  \brief Stores a pointer to an object of arbitary type and a typeindex(typeid) 
      *  corresponding to the stored object. 
      */
     struct Shared_Pointer_And_Type {
         std::shared_ptr<void> p;
         std::type_index t;
+
         Shared_Pointer_And_Type() : p(nullptr), t(typeid (void)) {
         }
+
         Shared_Pointer_And_Type(const std::shared_ptr<void>pp,
                 const std::type_index tt) : p(pp), t(tt) {
         }
+
         Shared_Pointer_And_Type(const Shared_Pointer_And_Type &other) :
         p(other.p), t(other.t) {
         }
+
         Shared_Pointer_And_Type& operator =
                 (const Shared_Pointer_And_Type &other) {
             this->p = other.p;
@@ -81,23 +87,27 @@ class Object {
      */
     Object * my_parent;
 
- public:
+public:
+
     /** 
      *  \brief Empty default constructor.
      */
     Object() : my_contents(), execute_me(nullptr), my_parent(nullptr) {
     }
+
     /** 
      *  \brief Standard copy constructor.
      */
     Object(const Object &o) : my_contents(o.my_contents),
     execute_me(o.execute_me), my_parent(o.my_parent) {
     }
+
     /** 
      *  \brief Empty virtual destructor. To be overloaded by derived classes.
      */
     virtual ~Object() {
     }
+
     /**  \brief Sets the parent of this Object to another Object
      *  @param other_object - new parent
      */
@@ -111,6 +121,7 @@ class Object {
             return;
         }
     }
+
     /** 
      *  \brief Standard assignment operator
      */
@@ -120,18 +131,20 @@ class Object {
         this->execute_me = other.execute_me;
         return *this;
     }
+
     /** 
      *   \brief Passes hashtable contents from one Object to another
      */
     inline void pass_contents(const Object &other) {
         this->my_contents = other.my_contents;
     }
+
     /**
      *  \brief Sets function pointer execute_me to the address of a static function. 
      * @param function_pointer - a generic 64-bit function pointer
      */
     template <class Type> void setFunc(Type function_pointer) {
-          // Prevents the user from setting function pointer to an object
+        // Prevents the user from setting function pointer to an object
         if (function_pointer == nullptr || (sizeof (function_pointer) !=
                 sizeof (this->execute_me))) {
             printf("In Object.setFunc, function pointer is null or function "
@@ -144,6 +157,7 @@ class Object {
             return;
         }
     }
+
     /**
      * Add a single object property to the properties hash table with key 
      * string::name and generic value. 
@@ -165,21 +179,21 @@ class Object {
     auto add(Args&&... args) -> decltype(set(std::forward<Args>(args)...)) {
         return set(std::forward<Args>(args)...);
     }
+
     /**
      * \brief Checks to see if this object or its parent
      * has a variable with name value equal to 
      * std::string name.
-     * returns false when name cannot be found
+     * returns false when name cannot be found.
      * @param name - name of the variable that we are searching for
      * @return true if element of name name can be found in this object or an 
      * object somewhere in its parent tree.
      */
     bool has(const std::string &name) {
-        try {   // If the element exists, get it.
-            ((this->my_contents.at(name)));
+        if (this->my_contents.count(name)) {
             return true;
-        }  // Else check to see if the my_parent has it
-        catch (const std::out_of_range& oor) {
+        }// Else check to see if the my_parent has it
+        else {
             if (this->my_parent != nullptr) {
                 return this->my_parent->has(name);
             } else {
@@ -187,6 +201,7 @@ class Object {
             }
         }
     }
+
     /**
      * \brief Checks to see if this object has a variable with name value equal to 
      * std::string name.
@@ -196,14 +211,24 @@ class Object {
      * object somewhere in its parent tree.
      */
     bool hasOwnProperty(const std::string &name) {
-        try {   // If the element exists, get it.
-            ((this->my_contents.at(name)));
+        return (bool)this->my_contents.count(name);
+    }
+
+    /**
+     * \brief Constant time alternative to hasOwnProperty
+     * @param name - name of the variable that we are searching for
+     * @return true if element of name name can be found in this object or an 
+     * object somewhere in its parent tree.
+     */
+    bool hasOwnProperty2(const std::string &name) {
+        auto spt = this->my_contents.find(name);
+        if (spt == this->my_contents.end()) {
+            return false;
+        } else {
             return true;
-        }  // Else check to see if the my_parent has it
-        catch (const std::out_of_range& oor) {
-                return false;
         }
     }
+
     /**
      * \brief Checks to see if this object or its parent
      * has a variable with name value equal to 
@@ -214,23 +239,20 @@ class Object {
      * object somewhere in its parent tree.
      */
     template <class Element_Type> bool has(const std::string &name) {
-        try {   // If the element exists, get it.
-            Shared_Pointer_And_Type spt = this->my_contents.at(name);
-            if (spt.t == std::type_index(typeid (Element_Type))) {
+        auto spt = this->my_contents.find(name);
+        if (spt == this->my_contents.end()) {
+            if (this->my_parent != nullptr)
+                return this->my_parent->hasOwnProperty<Element_Type>(name);
+            else
+                return false;
+        } else {
+            if (spt->second.t == std::type_index(typeid (Element_Type)))
                 return true;
-            } else {
+            else
                 return false;
-            }
-        }  // Else check to see if the my_parent has it
-        catch (const std::out_of_range& oor) {
-            if (this->my_parent != nullptr) {
-                return this->my_parent->has<Element_Type>(name);
-            } else {
-                return false;
-            }
         }
     }
-        /**
+    /**
      * \brief Checks to see if this object has a variable with name value equal to 
      * std::string name and type equal to Element_Type.
      * returns false when name cannot be found in this object
@@ -238,19 +260,26 @@ class Object {
      * @return true if element of name name can be found in this object or an 
      * object somewhere in its parent tree.
      */
+
+    /*std::unordered_map<std::string, double>::const_iterator got = mymap.find(input);
+
+    if (got == mymap.end())
+        std::cout << "not found";
+    else
+        std::cout << got->first << " is " << got->second;*/
+
     template <class Element_Type> bool hasOwnProperty(const std::string &name) {
-        try {   // If the element exists, get it.
-            Shared_Pointer_And_Type spt = this->my_contents.at(name);
-            if (spt.t == std::type_index(typeid (Element_Type))) {
+        auto spt = this->my_contents.find(name);
+        if (spt == this->my_contents.end()) {
+            return false;
+        } else {
+            if (spt->second.t == std::type_index(typeid (Element_Type)))
                 return true;
-            } else {
-                return false;
-            }
-        }  // Else check to see if the my_parent has it
-        catch (const std::out_of_range& oor) {
+            else
                 return false;
         }
     }
+
     /**
      * \brief Retrieves an element from this object with non-void return type
      * Throws out_of_range exception when name cannot be found
@@ -259,8 +288,8 @@ class Object {
      * angle brackets
      */
     template <class Return_Type> Return_Type get(const std::string &name) {
-          // If the element exists, get it.
-        try {
+        // If the element exists, get it.
+        if (this->hasOwnProperty(name)) {
             Shared_Pointer_And_Type spt = this->my_contents.at(name);
             if (spt.t == std::type_index(typeid (Return_Type))) {
                 Return_Type r = *(std::static_pointer_cast<Return_Type>(spt.p));
@@ -274,8 +303,8 @@ class Object {
                 //throw std::bad_cast();
                 throw -1;
             }
-        }  // Else check to see if the my_parent has it
-        catch (const std::out_of_range& oor) {
+        }// Else check to see if the my_parent has it
+        else {
             if (this->my_parent != nullptr) {
                 return this->my_parent->get<Return_Type>(name);
             } else {
@@ -288,6 +317,7 @@ class Object {
             }
         }
     }
+
     /**
      * \brief Directly calls the generic function pointer execute_me if the return 
      * type is void.
@@ -306,9 +336,11 @@ class Object {
             printf("In Object.call, function pointer passed to call is nullptr"
                     ".\n  See line number %d in file %s\n\n", __LINE__, __FILE__);
             //throw std::bad_function_call();
+            throw -1; //dereferencing a null pointer is a serious problem.
             return;
         }
     }
+
     /**
      * \brief Directly calls the generic function pointer execute_me contained within 
      * this object if the return type is non-void
@@ -321,9 +353,9 @@ class Object {
         if (this->execute_me != nullptr) {
             Return_Type * rptr = reinterpret_cast<Return_Type *>
                     (this->execute_me(Parameters...));
-            Return_Type ret = *rptr;   // copy contents of hash table
+            Return_Type ret = *rptr; // copy contents of hash table
             delete rptr;
-            return ret;   // return the copy.
+            return ret; // return the copy.
         } else if (this->my_parent != nullptr) {
             return this->my_parent->call<Return_Type>(Parameters...);
         } else {
@@ -334,6 +366,7 @@ class Object {
             throw -1;
         }
     }
+
     /**
      * \brief Executes a function with no return type by its function name 
      * @param function_name - the key name of the function as a std::string
@@ -341,7 +374,7 @@ class Object {
      */
     template<class ...A> void exec
     (const std::string &function_name, A... Parameters) {
-        try {
+        if (this->hasOwnProperty(function_name)) {
             Object::Shared_Pointer_And_Type spt =
                     my_contents.at((std::string) function_name);
             std::shared_ptr<Object> isObject = std::static_pointer_cast<Object>
@@ -349,21 +382,21 @@ class Object {
             if (isObject->my_type != ____OBJECT_TYPE) {
                 printf("Object.exec(\"%s\") does not "
                         "reference a callable Object.\n "
-                        " See line number %d in file %s\n\n", 
+                        " See line number %d in file %s\n\n",
                         function_name.c_str(), __LINE__, __FILE__);
                 //throw std::bad_function_call();
                 return;
             }
-              // Call the corresponding function
+            // Call the corresponding function
             isObject->call(Parameters...);
             return;
-        }  // C++ map throws an exception if function not found.
-        catch (const std::out_of_range& oor) {
-              // Check my_parent.
+        }// C++ map throws an exception if function not found.
+        else {
+            // Check my_parent.
             if (this->my_parent != nullptr) {
                 this->my_parent->exec(function_name, Parameters...);
                 return;
-            }  // Give up.
+            }// Give up.
             else {
                 printf("Function pointer named \"%s\" referenced by "
                         "Object.exec cannot be found.\n  "
@@ -374,6 +407,7 @@ class Object {
             }
         }
     }
+
     /**
      * \brief Executes a value-returning function by its function name 
      * @param function_name - the key name of the function as a std::string
@@ -382,7 +416,7 @@ class Object {
      */
     template<class Return_Type, class ...A> Return_Type exec
     (const std::string &function_name, A... Parameters) {
-        try {
+        if (this->hasOwnProperty(function_name)) {
             Object::Shared_Pointer_And_Type spt =
                     my_contents.at((std::string) function_name);
             std::shared_ptr<Object> isObject = std::static_pointer_cast<Object>
@@ -390,20 +424,20 @@ class Object {
             if (isObject->my_type != ____OBJECT_TYPE) {
                 printf("Object.exec<class Return_Type>(\"%s\") does not "
                         "reference a callable Object.\n "
-                        " See line number %d in file %s\n\n", 
+                        " See line number %d in file %s\n\n",
                         function_name.c_str(), __LINE__, __FILE__);
                 //throw std::bad_function_call();
                 throw -1;
             }
-              //  Calls the corresponding function.
+            //  Calls the corresponding function.
             return isObject->call<Return_Type>(Parameters...);
-        }  //  C++ map throws an exception if function not found.
-        catch (const std::out_of_range& oor) {
-              // Check my_parent.
+        }//  C++ map throws an exception if function not found.
+        else {
+            // Check my_parent.
             if (this->my_parent != nullptr)
                 return this->my_parent->exec<Return_Type>
                     (function_name, Parameters...);
-                  // Give up.
+                // Give up.
             else {
                 printf("Function pointer named \"%s\" referenced by "
                         "Object.exec<class Return_Type> cannot be found.\n  "
@@ -414,6 +448,7 @@ class Object {
             }
         }
     }
+
     /**
      * \brief Executes a standard function by name 
      * @param function_name - the key name of the standard function as a 
@@ -425,12 +460,12 @@ class Object {
      */
     template<class Standard_Function, class Return_Type = void, class ...A>
     Return_Type lexec(const std::string &function_name, A... Parameters) {
-        try {
+        if (this->hasOwnProperty(function_name)) {
             Object::Shared_Pointer_And_Type spt = my_contents.at(function_name);
             if (std::type_index(typeid (Standard_Function)) != spt.t) {
                 printf("Wrong standard function class referenced by "
                         "Object.levec<class Standard_Function>(\"%s\").\n  "
-                        "See line number %d in file %s\n\n", 
+                        "See line number %d in file %s\n\n",
                         function_name.c_str(), __LINE__, __FILE__);
                 //throw std::bad_function_call();
                 throw -1;
@@ -438,7 +473,7 @@ class Object {
             Standard_Function isLambda =
                     *(std::static_pointer_cast<Standard_Function>(spt.p));
             return isLambda(Parameters...);
-        } catch (std::out_of_range e) {
+        } else {
             if (this->my_parent != nullptr) {
                 return this->my_parent->lexec<Standard_Function, Return_Type>
                         (function_name, Parameters...);
