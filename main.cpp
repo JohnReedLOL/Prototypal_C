@@ -34,6 +34,13 @@ int main()
     int x = 5;
     object.set("x", x); //  add a new member x to object and set its name to "x".
     int i = object.get<int>("x"); //  get member of type int whose name is "x".
+    
+    try {object.get<int>("non-existant variable");} 
+    catch(int){}
+    
+    try {object.get<float>("x");}
+    catch(int){}
+    
     std::cout << i << std::endl; //  print 5.
     std::cout << "object has \"x\": " << object.has("x") << std::endl;
     std::cout << "object has int x: " << object.has<int>("x") << std::endl;

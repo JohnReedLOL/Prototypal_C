@@ -26,6 +26,7 @@ limitations under the License.
 #include <functional>
 #include <memory>
 #include <string>
+#include <climits>
 /** 
  *   \brief type pcast produces a function that takes in an arbitrary # of
  *   args and returns a void pointer. 
@@ -34,7 +35,7 @@ typedef void * (*pcast) (...);
 /** 
  * \brief Magic number used for type identification 
  */
-#define ____OBJECT_TYPE -9223372036854775807LL
+#define ____OBJECT_TYPE 9223372036854775807LL
 /**  \brief Dynamic object which is capable of adding static function pointers, 
  *  std::function lambads, and values to itself
  */
@@ -106,7 +107,7 @@ class Object {
         else {
             printf("In Object.setParent, Object is not allowed to set its "
                     "parent pointer to itself.\n  "
-                    "See line number %d in file %s\n", __LINE__, __FILE__);
+                    "See line number %d in file %s\n\n", __LINE__, __FILE__);
             return;
         }
     }
@@ -135,8 +136,8 @@ class Object {
                 sizeof (this->execute_me))) {
             printf("In Object.setFunc, function pointer is null or function "
                     "cannot safely be assigned.\n  "
-                    "See line number %d in file %s\n", __LINE__, __FILE__);
-            throw std::bad_function_call();
+                    "See line number %d in file %s\n\n", __LINE__, __FILE__);
+            //throw std::bad_function_call();
             return;
         } else {
             this->execute_me = (pcast) function_pointer;
@@ -225,22 +226,25 @@ class Object {
                 Return_Type r = *(std::static_pointer_cast<Return_Type>(spt.p));
                 return r;
             } else {
-                printf("In Object.get<class Return_Type>, value Return_Type "
+                printf("In Object.get<class Return_Type>(\"%s\"), "
+                        "template Return_Type "
                         "does not match up with a retrievable member's type.\n"
-                        "  See line number %d in file %s\n",
-                        __LINE__, __FILE__);
-                throw std::bad_cast();
+                        "  See line number %d in file %s\n\n",
+                        name.c_str(), __LINE__, __FILE__);
+                //throw std::bad_cast();
+                throw -1;
             }
         }  // Else check to see if the my_parent has it
         catch (const std::out_of_range& oor) {
             if (this->my_parent != nullptr) {
                 return this->my_parent->get<Return_Type>(name);
             } else {
-                printf("In Object.get<class Return_Type>(string name), "
+                printf("In Object.get<class Return_Type>(\"%s\"), "
                         "parameter \"%s\" does not correspond to a named "
-                        "element.\n  See line number %d in file %s\n",
-                        name.c_str(), __LINE__, __FILE__);
-                throw oor;
+                        "element.\n  See line number %d in file %s\n\n",
+                        name.c_str(), name.c_str(), __LINE__, __FILE__);
+                //throw oor;
+                throw -1;
             }
         }
     }
@@ -260,8 +264,8 @@ class Object {
             return;
         } else {
             printf("In Object.call, function pointer passed to call is nullptr"
-                    ".\n  See line number %d in file %s\n", __LINE__, __FILE__);
-            throw std::bad_function_call();
+                    ".\n  See line number %d in file %s\n\n", __LINE__, __FILE__);
+            //throw std::bad_function_call();
             return;
         }
     }
@@ -284,9 +288,10 @@ class Object {
             return this->my_parent->call<Return_Type>(Parameters...);
         } else {
             printf("In Object.call<class Return_Type>, function pointer passed"
-                    " to call is nullptr.\n  See line number %d in file %s\n",
+                    " to call is nullptr.\n  See line number %d in file %s\n\n",
                     __LINE__, __FILE__);
-            throw std::bad_function_call();
+            //throw std::bad_function_call();
+            throw -1;
         }
     }
     /**
@@ -302,9 +307,11 @@ class Object {
             std::shared_ptr<Object> isObject = std::static_pointer_cast<Object>
                     (spt.p);
             if (isObject->my_type != ____OBJECT_TYPE) {
-                printf("Element referenced by Object.exec is not an Object.\n "
-                        " See line number %d in file %s\n", __LINE__, __FILE__);
-                throw std::bad_function_call();
+                printf("Object.exec(\"%s\") does not "
+                        "reference a callable Object.\n "
+                        " See line number %d in file %s\n\n", 
+                        function_name.c_str(), __LINE__, __FILE__);
+                //throw std::bad_function_call();
                 return;
             }
               // Call the corresponding function
@@ -320,9 +327,9 @@ class Object {
             else {
                 printf("Function pointer named \"%s\" referenced by "
                         "Object.exec cannot be found.\n  "
-                        "See line number %d in file %s\n",
+                        "See line number %d in file %s\n\n",
                         function_name.c_str(), __LINE__, __FILE__);
-                throw oor;
+                //throw oor;
                 return;
             }
         }
@@ -341,10 +348,12 @@ class Object {
             std::shared_ptr<Object> isObject = std::static_pointer_cast<Object>
                     (spt.p);
             if (isObject->my_type != ____OBJECT_TYPE) {
-                printf("Element referenced by Object.exec<class Return_Type> "
-                        "is not an Object.\n  See line number %d in file %s\n",
-                        __LINE__, __FILE__);
-                throw std::bad_function_call();
+                printf("Object.exec<class Return_Type>(\"%s\") does not "
+                        "reference a callable Object.\n "
+                        " See line number %d in file %s\n\n", 
+                        function_name.c_str(), __LINE__, __FILE__);
+                //throw std::bad_function_call();
+                throw -1;
             }
               //  Calls the corresponding function.
             return isObject->call<Return_Type>(Parameters...);
@@ -358,9 +367,10 @@ class Object {
             else {
                 printf("Function pointer named \"%s\" referenced by "
                         "Object.exec<class Return_Type> cannot be found.\n  "
-                        "See line number %d in file %s\n",
+                        "See line number %d in file %s\n\n",
                         function_name.c_str(), __LINE__, __FILE__);
-                throw oor;
+                //throw oor;
+                throw -1;
             }
         }
     }
@@ -378,10 +388,12 @@ class Object {
         try {
             Object::Shared_Pointer_And_Type spt = my_contents.at(function_name);
             if (std::type_index(typeid (Standard_Function)) != spt.t) {
-                printf("Wrong standard function type referenced by "
-                        "Object.levec<class Standard_Function>.\n  "
-                        "See line number %d in file %s\n", __LINE__, __FILE__);
-                throw std::bad_function_call();
+                printf("Wrong standard function class referenced by "
+                        "Object.levec<class Standard_Function>(\"%s\").\n  "
+                        "See line number %d in file %s\n\n", 
+                        function_name.c_str(), __LINE__, __FILE__);
+                //throw std::bad_function_call();
+                throw -1;
             }
             Standard_Function isLambda =
                     *(std::static_pointer_cast<Standard_Function>(spt.p));
@@ -391,10 +403,12 @@ class Object {
                 return this->my_parent->lexec<Standard_Function, Return_Type>
                         (function_name, Parameters...);
             } else {
-                printf("In Objeect.lexec, function \"%s\" could not be found."
-                        "\n  See line number %d in file %s\n",
+                printf("In Object.lexec, std::function \"%s\" "
+                        "could not be found."
+                        "\n  See line number %d in file %s\n\n",
                         function_name.c_str(), __LINE__, __FILE__);
-                throw e;
+                //throw e;
+                throw -1;
             }
         }
     }
