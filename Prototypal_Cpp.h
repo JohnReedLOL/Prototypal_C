@@ -264,12 +264,12 @@ public:
      * angle brackets
      */
     template <class Return_Type> Return_Type get(const std::string &name) {
+        auto pair = this->my_contents.find(name);
         // If the element exists, get it.
-        if (this->hasOwnProperty(name)) {
-            Shared_Pointer_And_Type spt = this->my_contents.at(name);
+        if (pair != this->my_contents.end()) {
+            Shared_Pointer_And_Type spt = pair->second;
             if (spt.t == std::type_index(typeid (Return_Type))) {
-                Return_Type r = *(std::static_pointer_cast<Return_Type>(spt.p));
-                return r;
+                return *(std::static_pointer_cast<Return_Type>(spt.p));
             } else {
                 printf("In Object.get<class Return_Type>(\"%s\"), "
                         "template Return_Type "
@@ -346,9 +346,10 @@ public:
      */
     template<class ...A> void exec
     (const std::string &function_name, A... Parameters) {
-        if (this->hasOwnProperty(function_name)) {
+        auto pair = this->my_contents.find(function_name);
+        if (pair != this->my_contents.end()) {
             Object::Shared_Pointer_And_Type spt =
-                    my_contents.at((std::string) function_name);
+                    pair->second;
             std::shared_ptr<Object> isObject = std::static_pointer_cast<Object>
                     (spt.p);
             if (isObject->my_type == ____OBJECT_TYPE) {
@@ -364,7 +365,7 @@ public:
                 throw -1;
                 return;
             }
-        }// C++ map throws an exception if function not found.
+        }
         else {
             // Check my_parent.
             if (this->my_parent != nullptr) {
@@ -390,9 +391,10 @@ public:
      */
     template<class Return_Type, class ...A> Return_Type exec
     (const std::string &function_name, A... Parameters) {
-        if (this->hasOwnProperty(function_name)) {
+        auto pair = this->my_contents.find(function_name);
+        if (pair != this->my_contents.end()) {
             Object::Shared_Pointer_And_Type spt =
-                    my_contents.at((std::string) function_name);
+                    pair->second;
             std::shared_ptr<Object> isObject = std::static_pointer_cast<Object>
                     (spt.p);
             if (isObject->my_type == ____OBJECT_TYPE) {
@@ -406,7 +408,7 @@ public:
                 throw -1;
             }
 
-        }//  C++ map throws an exception if function not found.
+        }
         else {
             // Check my_parent.
             if (this->my_parent != nullptr)
@@ -435,8 +437,9 @@ public:
      */
     template<class Standard_Function, class Return_Type = void, class ...A>
     Return_Type lexec(const std::string &function_name, A... Parameters) {
-        if (this->hasOwnProperty(function_name)) {
-            Object::Shared_Pointer_And_Type spt = my_contents.at(function_name);
+        auto pair = this->my_contents.find(function_name);
+        if (pair != this->my_contents.end()) {
+            Object::Shared_Pointer_And_Type spt = pair->second;
             if (std::type_index(typeid (Standard_Function)) == spt.t) {
                 Standard_Function isLambda =
                         *(std::static_pointer_cast<Standard_Function>(spt.p));
