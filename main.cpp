@@ -19,9 +19,45 @@ limitations under the License.
  */
 #include "Prototypal_Cpp.h"
 #include <iostream>
+#include <cstring>
+#include <google/dense_hash_map> //google dense hashmap
+
+using google::dense_hash_map;      // namespace where class lives by default
+using namespace std;
+
+//struct eqstr
+//{
+//  bool operator()(const char* s1, const char* s2) const
+//  {
+//    return std::strcmp(s1, s2) == 0;
+//  }
+//};
 
 int main()
 {
+    cout << "hi" << endl;
+  dense_hash_map<const char*, int, std::hash<const char*>> months;
+  
+  months.set_empty_key("`");
+  months["january"] = 31;
+  months["february"] = 28;
+  months["march"] = 31;
+  months["april"] = 30;
+  months["may"] = 31;
+  months["june"] = 30;
+  months["july"] = 31;
+  months["august"] = 31;
+  months["september"] = 30;
+  months["october"] = 31;
+  months["november"] = 30;
+  months["december"] = 31;
+  
+  std::cout << "september -> " << months["september"] << std::endl;
+  std::cout << "april     -> " << months["april"] << std::endl;
+  std::cout << "june      -> " << months["june"] << std::endl;
+  std::cout << "november  -> " << months["november"] << std::endl;
+
+
     /* Prototypal_C is a header implementing a class that allows users to write 
      * dynamic, type-safe, prototypal inheritance based c++ code. The Object 
      * class contained within this header can be instantiated to create generic 
@@ -34,15 +70,17 @@ int main()
     int x = 5;
     object.set("x", x); //  add a new member x to object and set its name to "x".
     int i = object.get<int>("x"); //  get member of type int whose name is "x".
-    
+
     try {
         object.get<int>("non-existant variable");
-    } 
-    catch(int){}
-    
-    try {object.get<float>("x");}
-    catch(int){}
-    
+    } catch (int) {
+    }
+
+    try {
+        object.get<float>("x");
+    }    catch (int) {
+    }
+
     std::cout << i << std::endl; //  print 5.
     std::cout << "object has \"x\": " << object.has("x") << std::endl;
     std::cout << "object has own \"x\": " << object.hasOwnProperty("x") << std::endl;
