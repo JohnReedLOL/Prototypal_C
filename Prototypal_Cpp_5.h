@@ -17,11 +17,10 @@ limitations under the License.
  * Created on December 13, 2014, 10:10 AM
  */
 
-#ifndef NETBEANSPROJECTS_MINIFIED_VERSION_4_PROTOTYPAL_CPP_H_
-#define NETBEANSPROJECTS_MINIFIED_VERSION_4_PROTOTYPAL_CPP_H_
+#ifndef NETBEANSPROJECTS_MINIFIED_VERSION_5_PROTOTYPAL_CPP_H_
+#define NETBEANSPROJECTS_MINIFIED_VERSION_5_PROTOTYPAL_CPP_H_
 
-#include <iostream>
-
+#include <cstring>
 #include <stdio.h>
 #include <typeindex>
 #include <unordered_map>
@@ -29,6 +28,8 @@ limitations under the License.
 #include <memory>
 #include <string>
 #include <climits>
+#include <google/dense_hash_map> //google dense hashmap
+
 /** 
  *   \brief type pcast produces a function that takes in an arbitrary # of
  *   args and returns a void pointer. 
@@ -73,11 +74,20 @@ class Object {
             return *this;
         }
     };
+
     /** 
      *   \brief Stores persistent variables, std::function types, and Objects 
      */
-    std::unordered_map<const char * , Object::Shared_Pointer_And_Type>
-    my_contents;
+    struct eqstr {
+
+        bool operator()(const char* s1, const char* s2) const {
+            return (s1 == s2) || (s1 && s2 && std::strcmp(s1, s2) == 0);
+        }
+    };
+    google::dense_hash_map<const char*, 
+    Object::Shared_Pointer_And_Type, std::hash<const char*>, eqstr> my_contents;
+    //std::unordered_map<std::string, Object::Shared_Pointer_And_Type>
+    //my_contents;
     /**  \brief Re-assignable function pointer.
      *  Set with Object::setFunc and called with Object::call<Return_Type>.
      */
@@ -94,8 +104,8 @@ public:
     /** 
      *  \brief Empty default constructor.
      */
-    Object() : my_contents(), execute_me(nullptr), my_parent(nullptr) {
-        std::cout << "SIZE OF STD MAP: " << sizeof(my_contents) << std::endl;
+    Object() : my_contents(8u), execute_me(nullptr), my_parent(nullptr) {
+        my_contents.set_empty_key("`");
     }
 
     /** 
@@ -186,7 +196,7 @@ public:
     /**
      * \brief Checks to see if this object or its parent
      * has a variable with name value equal to 
-     * char *  name.
+     * std::string name.
      * returns false when name cannot be found.
      * @param name - name of the variable that we are searching for
      * @return true if element of name name can be found in this object or an 
@@ -207,7 +217,7 @@ public:
 
     /**
      * \brief Checks to see if this object has a variable with name value equal to 
-     * char *  name.
+     * std::string name.
      * returns false when name cannot be found in this object
      * @param name - name of the variable that we are searching for
      * @return true if element of name name can be found in this object or an 
@@ -220,7 +230,7 @@ public:
     /**
      * \brief Checks to see if this object or its parent
      * has a variable with name value equal to 
-     * char *  name and type equal to Element_Type.
+     * std::string name and type equal to Element_Type.
      * returns false when name cannot be found
      * @param name - name of the variable that we are searching for
      * @return true if element of name name can be found in this object or an 
@@ -244,7 +254,7 @@ public:
 
     /**
      * \brief Checks to see if this object has a variable with name value equal to 
-     * char *  name and type equal to Element_Type.
+     * std::string name and type equal to Element_Type.
      * returns false when name cannot be found in this object
      * @param name - name of the variable that we are searching for
      * @return true if element of name name can be found in this object or an 
@@ -282,7 +292,7 @@ public:
                         "template Return_Type "
                         "does not match up with a retrievable member's type.\n"
                         "  See line number %d in file %s\n\n",
-                        name , __LINE__, __FILE__);
+                        name, __LINE__, __FILE__);
                 throw -1;
             }
         }// Else check to see if the my_parent has it
@@ -293,7 +303,7 @@ public:
                 printf("In Object.get<class Return_Type>(\"%s\"), "
                         "parameter \"%s\" does not correspond to a named "
                         "element.\n  See line number %d in file %s\n\n",
-                        name , name , __LINE__, __FILE__);
+                        name, name, __LINE__, __FILE__);
                 throw -1;
             }
         }
@@ -348,7 +358,7 @@ public:
 
     /**
      * \brief Executes a function with no return type by its function name 
-     * @param function_name - the key name of the function as a char * 
+     * @param function_name - the key name of the function as a std::string
      * @param Parameters - generic list of function parameters
      */
     template<class ...A> void exec
@@ -368,7 +378,7 @@ public:
                 printf("Object.exec(\"%s\") does not "
                         "reference a callable Object.\n "
                         " See line number %d in file %s\n\n",
-                        function_name , __LINE__, __FILE__);
+                        function_name, __LINE__, __FILE__);
                 throw -1;
                 return;
             }
@@ -382,7 +392,7 @@ public:
                 printf("Function pointer named \"%s\" referenced by "
                         "Object.exec cannot be found.\n  "
                         "See line number %d in file %s\n\n",
-                        function_name , __LINE__, __FILE__);
+                        function_name, __LINE__, __FILE__);
                 throw -1;
                 return;
             }
@@ -391,7 +401,7 @@ public:
 
     /**
      * \brief Executes a value-returning function by its function name 
-     * @param function_name - the key name of the function as a char * 
+     * @param function_name - the key name of the function as a std::string
      * @param Parameters - generic list of function parameters
      * @return Return_Type - generic return type - must be specified in <>
      */
@@ -410,7 +420,7 @@ public:
                 printf("Object.exec<class Return_Type>(\"%s\") does not "
                         "reference a callable Object.\n "
                         " See line number %d in file %s\n\n",
-                        function_name , __LINE__, __FILE__);
+                        function_name, __LINE__, __FILE__);
                 throw -1;
             }
 
@@ -424,7 +434,7 @@ public:
                 printf("Function pointer named \"%s\" referenced by "
                         "Object.exec<class Return_Type> cannot be found.\n  "
                         "See line number %d in file %s\n\n",
-                        function_name , __LINE__, __FILE__);
+                        function_name, __LINE__, __FILE__);
                 //throw oor;
                 throw -1;
             }
@@ -434,7 +444,7 @@ public:
     /**
      * \brief Executes a standard function by name 
      * @param function_name - the key name of the standard function as a 
-     * char * 
+     * std::string
      * @param Parameters - generic list of function parameters
      * @param Standard_Function - type of standard function to execute. 
      * Example: std::function<void(int)>
@@ -453,7 +463,7 @@ public:
                 printf("Wrong standard function class referenced by "
                         "Object.levec<class Standard_Function>(\"%s\").\n  "
                         "See line number %d in file %s\n\n",
-                        function_name , __LINE__, __FILE__);
+                        function_name, __LINE__, __FILE__);
                 throw -1;
             }
         } else {
@@ -464,10 +474,10 @@ public:
                 printf("In Object.lexec, std::function \"%s\" "
                         "could not be found."
                         "\n  See line number %d in file %s\n\n",
-                        function_name , __LINE__, __FILE__);
+                        function_name, __LINE__, __FILE__);
                 throw -1;
             }
         }
     }
 };
-#endif    // NETBEANSPROJECTS_MINIFIED_VERSION_4_PROTOTYPAL_CPP_H_
+#endif    // NETBEANSPROJECTS_MINIFIED_VERSION_5_PROTOTYPAL_CPP_H_
