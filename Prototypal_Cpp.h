@@ -224,9 +224,10 @@ public:
      * object somewhere in its parent tree.
      */
     template <class Element_Type> bool has(const std::string &name) {
-        auto spt = this->my_contents.find(name);
-        if (spt != this->my_contents.end()) {
-            if (spt->second.t == std::type_index(typeid (Element_Type)))
+        auto pair = this->my_contents.find(name);
+        if (pair != this->my_contents.end()) {
+            Object::Shared_Pointer_And_Type spt = pair->second;
+            if (spt.t == std::type_index(typeid (Element_Type)))
                 return true;
             else
                 return false;
@@ -247,10 +248,13 @@ public:
      * object somewhere in its parent tree.
      */
     template <class Element_Type> bool hasOwnProperty(const std::string &name) {
-        auto spt = this->my_contents.find(name);
-        if ((spt != this->my_contents.end()) &&
-                (spt->second.t == std::type_index(typeid (Element_Type)))) {
-            return true;
+        auto pair = this->my_contents.find(name);
+        if (pair != this->my_contents.end()) {
+            Object::Shared_Pointer_And_Type spt = pair->second;
+            if (spt.t == std::type_index(typeid (Element_Type)))
+                return true;
+            else
+                return false;
         } else {
             return false;
         }
@@ -365,8 +369,7 @@ public:
                 throw -1;
                 return;
             }
-        }
-        else {
+        } else {
             // Check my_parent.
             if (this->my_parent != nullptr) {
                 this->my_parent->exec(function_name, Parameters...);
@@ -408,8 +411,7 @@ public:
                 throw -1;
             }
 
-        }
-        else {
+        } else {
             // Check my_parent.
             if (this->my_parent != nullptr)
                 return this->my_parent->exec<Return_Type>
